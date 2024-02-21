@@ -83,7 +83,10 @@ fun Login(modifier: Modifier, viewModel: LoginViewModel, navController: NavContr
             Spacer(modifier = Modifier.padding(8.dp))
             ForgontPasswordText(Modifier.align(Alignment.End))
             Spacer(modifier = Modifier.padding(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
                 LoginButton(loginEnable) {
                     corrutineScope.launch {
                         viewModel.onLoginSelected(email, password, navController)
@@ -91,7 +94,10 @@ fun Login(modifier: Modifier, viewModel: LoginViewModel, navController: NavContr
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 // Añade aquí el botón de Sign Up
-                SignUpButton(onSignUpSelected = { viewModel.onSignUpSelected(navController) }, navController = navController)
+                SignUpButton(
+                    onSignUpSelected = { viewModel.onSignUpSelected(navController) },
+                    navController = navController
+                )
             }
         }
     }

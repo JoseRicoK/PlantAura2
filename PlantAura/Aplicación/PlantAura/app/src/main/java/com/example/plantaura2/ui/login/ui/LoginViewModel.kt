@@ -25,9 +25,6 @@ class LoginViewModel(private val authUseCase: AuthUseCase) : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
-    private val _navigation = MutableLiveData<String?>()
-    val navigation: LiveData<String?> = _navigation
-
     fun onLoginChanged(email: String, password: String) {
         _email.value = email
         _password.value = password
@@ -56,6 +53,9 @@ class LoginViewModel(private val authUseCase: AuthUseCase) : ViewModel() {
     fun onSignUpSelected(navController: NavController) {
         navigateToSignUp(navController)
     }
+
+
+
 
     fun navigateToHome(navController: NavController) {
         navController.navigate("home")

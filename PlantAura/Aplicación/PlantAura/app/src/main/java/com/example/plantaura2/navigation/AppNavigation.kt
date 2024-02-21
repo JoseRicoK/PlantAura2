@@ -32,8 +32,7 @@ fun AppNavigation(
             HomeScreen(viewModel = homeViewModel, navController = navController)
         }
         composable(Screen.Hub.route) {
-            HubScreen(viewModel = hubViewModel, navController = navController)
+            HubScreen()
         }
     }
 }
-

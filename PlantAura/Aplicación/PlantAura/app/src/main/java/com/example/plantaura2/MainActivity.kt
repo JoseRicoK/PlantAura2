@@ -9,16 +9,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.plantaura2.domain.usecase.AuthUseCase
+import com.example.plantaura2.domain.usecase.GetPlantNamesUseCase
 import com.example.plantaura2.domain.usecase.SignInUseCase
 import com.example.plantaura2.navigation.AppNavigation
 import com.example.plantaura2.ui.home.ui.HomeViewModel
 import com.example.plantaura2.ui.home.ui.HomeViewModelFactory
+//import com.example.plantaura2.ui.home.ui.HomeViewModelFactory
 import com.example.plantaura2.ui.login.ui.LoginViewModel
 import com.example.plantaura2.ui.login.ui.LoginViewModelFactory
 import com.example.plantaura2.ui.questionHub.ui.QuestionHubViewModel
 import com.example.plantaura2.ui.signup.ui.SignUpViewModel
 import com.example.plantaura2.ui.theme.PlantAura2Theme
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,9 +29,10 @@ class MainActivity : ComponentActivity() {
 
         val authUseCase = AuthUseCase(FirebaseAuth.getInstance())
         val signInUseCase = SignInUseCase(FirebaseAuth.getInstance())
+        val getPlantNamesUseCase = GetPlantNamesUseCase(FirebaseFirestore.getInstance())
 
         val factory = LoginViewModelFactory(authUseCase)
-        val homeViewModelFactory = HomeViewModelFactory(signInUseCase)
+        val homeViewModelFactory = HomeViewModelFactory(getPlantNamesUseCase)
 
         val loginViewModel: LoginViewModel by viewModels { factory }
         val signUpViewModel: SignUpViewModel by viewModels()

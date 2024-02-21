@@ -1,41 +1,41 @@
 package com.example.plantaura2.ui.home.ui
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.plantaura2.domain.usecase.SignInUseCase
+import com.example.plantaura2.domain.usecase.GetPlantNamesUseCase
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class HomeViewModel(private val signInUseCase: SignInUseCase) : ViewModel() {
-    private val _loading = MutableLiveData(false)
-    val loading: LiveData<Boolean> = _loading
+class HomeViewModel(private val getPlantNamesUseCase: GetPlantNamesUseCase) : ViewModel() {
+    private val _plantNames = MutableStateFlow<List<String>>(emptyList())
+    val plantNames: StateFlow<List<String>> = _plantNames
 
-    fun signInWithEmailAndPassword(email: String, password: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
-        viewModelScope.launch {
-            try {
-                _loading.value = true
-                signInUseCase(email, password).addOnCompleteListener { task ->
-                    _loading.value = false
-                    if (task.isSuccessful) {
-                        onSuccess()
-                    } else {
-                        task.exception?.message?.let { onError(it) }
-                    }
-                }
-            } catch (ex: Exception) {
-                _loading.value = false
-                onError(ex.message ?: "An error occurred")
-            }
+    init {
+        loadPlantNames()
+    }
+
+    private fun loadPlantNames() {
+    viewModelScope.launch {
+        val result = getPlantNamesUseCase.getPlantNames()
+        result.onSuccess { plantNamesList ->
+            _plantNames.value = plantNamesList
+            Log.d("HomeViewModel", "Nombres de plantas cargados: $plantNamesList")
+        }.onFailure { exception ->
+            Log.e("HomeViewModel", "Error loading plant names", exception)
         }
     }
 }
 
-class HomeViewModelFactory(private val signInUseCase: SignInUseCase) : ViewModelProvider.Factory {
+}
+
+class HomeViewModelFactory(private val getPlantNamesUseCase: GetPlantNamesUseCase) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
-            return HomeViewModel(signInUseCase) as T
+            @Suppress("UNCHECKED_CAST")
+            return HomeViewModel(getPlantNamesUseCase) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
