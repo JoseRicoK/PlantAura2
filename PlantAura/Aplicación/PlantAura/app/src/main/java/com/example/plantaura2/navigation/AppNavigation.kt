@@ -8,8 +8,14 @@ import com.example.plantaura2.ui.home.ui.HomeScreen
 import com.example.plantaura2.ui.home.ui.HomeViewModel
 import com.example.plantaura2.ui.login.ui.LoginScreen
 import com.example.plantaura2.ui.login.ui.LoginViewModel
+import com.example.plantaura2.ui.profile.ui.ProfileScreen
+import com.example.plantaura2.ui.profile.ui.ProfileViewModel
 import com.example.plantaura2.ui.questionHub.ui.HubScreen
 import com.example.plantaura2.ui.questionHub.ui.QuestionHubViewModel
+import com.example.plantaura2.ui.sensorConnection.ui.SensorConnectionScreen
+import com.example.plantaura2.ui.sensorConnection.ui.SensorConnectionViewModel
+import com.example.plantaura2.ui.settings.ui.SettingsScreen
+import com.example.plantaura2.ui.settings.ui.SettingsViewModel
 import com.example.plantaura2.ui.signup.ui.SignUpScreen
 import com.example.plantaura2.ui.signup.ui.SignUpViewModel
 
@@ -18,7 +24,10 @@ fun AppNavigation(
     loginViewModel: LoginViewModel,
     signUpViewModel: SignUpViewModel,
     homeViewModel: HomeViewModel,
-    hubViewModel: QuestionHubViewModel
+    hubViewModel: QuestionHubViewModel,
+    sensorConnectionViewModel: SensorConnectionViewModel,
+    profileViewModel: ProfileViewModel,
+    settingsViewModel: SettingsViewModel
 ) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = Screen.Login.route) {
@@ -33,6 +42,15 @@ fun AppNavigation(
         }
         composable(Screen.Hub.route) {
             HubScreen()
+        }
+        composable(Screen.SensorConnection.route) {
+            SensorConnectionScreen(viewModel = sensorConnectionViewModel)
+        }
+        composable(Screen.Profile.route) {
+            ProfileScreen(viewModel = profileViewModel, navController = navController)
+        }
+        composable(Screen.Settings.route) {
+            SettingsScreen(viewModel = settingsViewModel, navController = navController)
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.example.plantaura2.ui.signup.ui
 
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,18 +10,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.plantaura2.R
-import com.example.plantaura2.ui.theme.PlantAura2Theme
 import kotlinx.coroutines.launch
 
 @Composable
 fun SignUpScreen(viewModel: SignUpViewModel, navController: NavController) {
+    val navigation: String? by viewModel.navigation.observeAsState()
+
+    LaunchedEffect(navigation) {
+        if (navigation != null) {
+            navController.navigate(navigation!!)
+            viewModel.onNavigationHandled() // Reset navigation state after handling it
+        }
+    }
+
     Box(
         Modifier
             .fillMaxSize()
@@ -132,4 +139,3 @@ fun HeaderImage(modifier: Modifier) {
             .aspectRatio(1f)
     )
 }
-

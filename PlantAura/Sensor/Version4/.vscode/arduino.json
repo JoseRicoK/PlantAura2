@@ -1,0 +1,6 @@
+{
+    "port": "/dev/tty.usbmodem21201",
+    "board": "arduino:mbed_nano:nano33ble",
+    "sketch": "Version4.ino",
+    "output": "./build"
+}

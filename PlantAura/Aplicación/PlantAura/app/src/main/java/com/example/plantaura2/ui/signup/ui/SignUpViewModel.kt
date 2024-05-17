@@ -1,14 +1,11 @@
 package com.example.plantaura2.ui.signup.ui
 
 import android.util.Patterns
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
+import androidx.lifecycle.*
+import com.example.plantaura2.domain.usecase.SignUpUseCase
 import kotlinx.coroutines.launch
 
-class SignUpViewModel : ViewModel() {
+class SignUpViewModel(private val signUpUseCase: SignUpUseCase) : ViewModel() {
     private val _email = MutableLiveData<String>()
     val email: LiveData<String> = _email
 
@@ -43,26 +40,41 @@ class SignUpViewModel : ViewModel() {
     }
 
     private fun validateForm() {
-        val emailValid = isValidEmail(_email.value)
-        val passwordValid = isValidPassword(_password.value)
+        val emailValid = isValidEmail(_email.value ?: "")
+        val passwordValid = isValidPassword(_password.value ?: "")
         val passwordsMatch = _password.value == _confirmPassword.value
         _signUpEnable.value = emailValid && passwordValid && passwordsMatch
     }
 
-    private fun isValidPassword(password: String?): Boolean {
-        return password != null && password.length >= 6
-    }
+    private fun isValidPassword(password: String): Boolean = password.length >= 6
 
-    private fun isValidEmail(email: String?): Boolean {
-        return email != null && Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    private fun isValidEmail(email: String): Boolean =
+        Patterns.EMAIL_ADDRESS.matcher(email).matches()
+
+    fun onNavigationHandled() {
+        _navigation.value = null
     }
 
     fun onSignUpSelected() {
         viewModelScope.launch {
             _isLoading.value = true
-            delay(4000) // Simular una operación de red
+            val result = signUpUseCase.signUpWithEmail(_email.value!!, _password.value!!)
             _isLoading.value = false
-            _navigation.value = "hub"
+            if (result.isSuccess) {
+                _navigation.value = "home"
+            } else {
+                _navigation.value = "error" // Manejar error de registro
+            }
         }
+    }
+}
+
+class SignUpViewModelFactory(private val signUpUseCase: SignUpUseCase) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(SignUpViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return SignUpViewModel(signUpUseCase) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
