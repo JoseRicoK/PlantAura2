@@ -10,14 +10,14 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -29,41 +29,34 @@ import javax.jmdns.ServiceEvent
 import javax.jmdns.ServiceInfo
 import javax.jmdns.ServiceListener
 
+data class Sensor(val id: String, val ip: String, val humedad: Int, val nombre: String = "")
+
 class SensorConnectionViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val _message = MutableStateFlow("Buscando ESP32...")
-    val message: StateFlow<String> = _message
+    private val _sensors = MutableStateFlow<List<Sensor>>(emptyList())
+    val sensors: StateFlow<List<Sensor>> = _sensors
 
-    // Actualiza el mensaje y registra en el log
-    fun updateMessage(newMessage: String) {
-        _message.value = newMessage
-        Log.d("SensorConnectionViewModel", "Message updated: $newMessage")
-    }
+    private val firestore = FirebaseFirestore.getInstance()
 
     // Verifica si el dispositivo está conectado a WiFi
     private fun isConnectedToWiFi(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
         val networkCapabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-        Log.d("SensorConnectionViewModel", "isConnectedToWiFi")
         return networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
     }
 
     // Descubre el ESP32 utilizando mDNS
     fun discoverESP32(context: Context) {
         if (!isConnectedToWiFi(context)) {
-            updateMessage("Error: El dispositivo no está conectado a WiFi")
             Log.e("SensorConnectionViewModel", "El dispositivo no está conectado a WiFi")
             return
-        } else {
-            Log.d("SensorConnectionViewModel", "El dispositivo está conectado a WiFi")
         }
 
         enableMulticast()
 
         viewModelScope.launch {
             try {
-                Log.d("SensorConnectionViewModel", "Starting mDNS discovery")
                 val jmdns = withContext(Dispatchers.IO) {
                     JmDNS.create(InetAddress.getByName("192.168.5.222")).apply {
                         Log.d("SensorConnectionViewModel", "JmDNS created")
@@ -72,11 +65,8 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
 
                 jmdns.addServiceListener("_http._tcp.local.", object : ServiceListener {
                     override fun serviceAdded(event: ServiceEvent) {
-                        Log.d("SensorConnectionViewModel", "Service added: " + event.info)
-                        // Forzar resolución del servicio
-                        event.info?.let { serviceInfo ->;
+                        event.info?.let { serviceInfo ->
                             if (serviceInfo.hasData()) {
-                                Log.d("SensorConnectionViewModel", "Service already resolved: " + serviceInfo)
                                 handleServiceResolved(serviceInfo)
                             } else {
                                 jmdns.requestServiceInfo(event.type, event.name, true)
@@ -85,30 +75,24 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
                     }
 
                     override fun serviceRemoved(event: ServiceEvent) {
-                        Log.d("SensorConnectionViewModel", "Service removed: " + event.info)
+                        // Handle service removal if needed
                     }
 
                     override fun serviceResolved(event: ServiceEvent) {
-                        Log.d("SensorConnectionViewModel", "Service resolved: " + event.info)
                         handleServiceResolved(event.info)
                     }
                 })
 
-                Log.d("SensorConnectionViewModel", "ServiceListener added")
-
-                // Aumenta el tiempo de espera a 60 segundos
-                delay(60000)  // Esperar 60 segundos para descubrir servicios
-                Log.d("SensorConnectionViewModel", "Timeout for mDNS discovery")
+                delay(10000)  // Esperar 10 segundos para descubrir servicios
 
             } catch (e: IOException) {
                 e.printStackTrace()
                 Log.e("SensorConnectionViewModel", "IOException during mDNS discovery: ${e.message}")
-                updateMessage("Error: ${e.message}")
             }
         }
     }
 
-    fun enableMulticast() {
+    private fun enableMulticast() {
         val wifiManager = getApplication<Application>().applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         val multicastLock = wifiManager.createMulticastLock("myMulticastLock")
         multicastLock.setReferenceCounted(true)
@@ -116,30 +100,24 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
         Log.d("SensorConnectionViewModel", "Multicast Lock acquired")
     }
 
-
-    // Maneja la resolución del servicio
     private fun handleServiceResolved(serviceInfo: ServiceInfo) {
         val esp32Address = serviceInfo.inet4Addresses.firstOrNull()?.hostAddress
         if (esp32Address != null) {
-            Log.d("SensorConnectionViewModel", "ESP32 Address: $esp32Address")
             fetchMessageFromESP32(esp32Address)
         } else {
             Log.e("SensorConnectionViewModel", "Error: Dirección IP del ESP32 no encontrada")
-            updateMessage("Error: Dirección IP del ESP32 no encontrada")
         }
     }
 
-    // Definir una interfaz para Retrofit
     interface ApiService {
         @GET("data")
-        suspend fun getData(): Response<String>
+        suspend fun getData(): Response<Sensor>
     }
 
-    // Configurar Retrofit en el ViewModel
     private fun fetchMessageFromESP32(ipAddress: String) {
         viewModelScope.launch {
             val retrofit = Retrofit.Builder()
-                .baseUrl("http://$ipAddress/") // Retrofit necesita un esquema
+                .baseUrl("http://$ipAddress/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
 
@@ -150,17 +128,35 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
                     service.getData()
                 }
                 if (response.isSuccessful) {
-                    val responseData = response.body()
-                    Log.d("SensorConnectionViewModel", "HTTP response successful: $responseData")
-                    updateMessage(responseData ?: "Sin datos")
+                    val sensorData = response.body()
+                    if (sensorData != null) {
+                        val sensor = Sensor(sensorData.id, ipAddress, sensorData.humedad)
+                        _sensors.value = _sensors.value + sensor
+                    }
                 } else {
                     Log.e("SensorConnectionViewModel", "Error en la respuesta: ${response.code()}")
-                    updateMessage("Error en la respuesta: ${response.code()}")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 Log.e("SensorConnectionViewModel", "Exception during HTTP request: ${e.message}")
-                updateMessage("Error: ${e.message}")
+            }
+        }
+    }
+
+    fun saveSensorToFirebase(sensorId: String, name: String, onSuccess: () -> Unit) {
+        val sensorData = hashMapOf(
+            "id" to sensorId,
+            "name" to name
+            // Agrega otros campos que desees guardar
+        )
+
+        viewModelScope.launch {
+            try {
+                firestore.collection("Plantas").document(sensorId).set(sensorData).await()
+                Log.d("SensorConnectionViewModel", "Sensor guardado en Firebase con éxito")
+                onSuccess() // Navegar a la pantalla de detalles después de guardar
+            } catch (e: Exception) {
+                Log.e("SensorConnectionViewModel", "Error guardando el sensor: ${e.message}")
             }
         }
     }

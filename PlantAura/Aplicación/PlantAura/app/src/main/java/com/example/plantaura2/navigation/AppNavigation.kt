@@ -18,6 +18,7 @@ import com.example.plantaura2.ui.settings.ui.SettingsScreen
 import com.example.plantaura2.ui.settings.ui.SettingsViewModel
 import com.example.plantaura2.ui.signup.ui.SignUpScreen
 import com.example.plantaura2.ui.signup.ui.SignUpViewModel
+import com.example.plantaura2.ui.plantDetails.ui.PlantDetailsScreen
 
 @Composable
 fun AppNavigation(
@@ -44,13 +45,17 @@ fun AppNavigation(
             HubScreen()
         }
         composable(Screen.SensorConnection.route) {
-            SensorConnectionScreen(viewModel = sensorConnectionViewModel)
+            SensorConnectionScreen(viewModel = sensorConnectionViewModel, navController = navController)
         }
         composable(Screen.Profile.route) {
             ProfileScreen(viewModel = profileViewModel, navController = navController)
         }
         composable(Screen.Settings.route) {
             SettingsScreen(viewModel = settingsViewModel, navController = navController)
+        }
+        composable("plantDetails/{sensorId}") { backStackEntry ->
+            val sensorId = backStackEntry.arguments?.getString("sensorId") ?: return@composable
+            PlantDetailsScreen(sensorId = sensorId)
         }
     }
 }

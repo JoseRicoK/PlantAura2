@@ -8,4 +8,5 @@ sealed class Screen(val route: String) {
     object SensorConnection : Screen("sensorConnection")
     object Profile : Screen("profile")
     object Settings : Screen("settings")
+    object PlantDetails : Screen("plantDetails")
 }

@@ -1,10 +1,7 @@
 package com.example.plantaura2.ui.sensorConnection.ui
 
 import android.content.Context
-import android.content.pm.PackageManager
-import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,7 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeviceHub
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -20,43 +17,39 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-
-data class Device(val name: String, val status: String)
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.window.Dialog
 
 @Composable
-fun SensorConnectionScreen(viewModel: SensorConnectionViewModel) {
+fun SensorConnectionScreen(viewModel: SensorConnectionViewModel = viewModel(), navController: NavController) {
     val context = LocalContext.current
+    val sensors by viewModel.sensors.collectAsState()
 
-    MainContent(viewModel = viewModel, context = context)
-}
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedSensorId by remember { mutableStateOf<String?>(null) }
 
-@Composable
-fun MainContent(viewModel: SensorConnectionViewModel, context: Context) {
+    if (showDialog) {
+        SensorNameDialog(
+            onDismiss = { showDialog = false },
+            onSave = { name ->
+                selectedSensorId?.let { sensorId ->
+                    viewModel.saveSensorToFirebase(sensorId, name) {
+                        navController.navigate("plantDetails/$sensorId")
+                    }
+                }
+            }
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         SensorConnectionTopBar()
-        SensorValueDisplay(viewModel = viewModel)
         TextoBusqueda(viewModel, context)
-        DeviceListDisplay(devices = listOf(
-            Device("Dispositivo 1", "Conectado"),
-            Device("Dispositivo 2", "Desconectado"),
-            Device("Dispositivo 3", "Conectando...")
-        ))
-    }
-}
-
-@Composable
-fun SensorValueDisplay(viewModel: SensorConnectionViewModel) {
-    val sensorValue by viewModel.message.collectAsState()
-    Log.d("SensorValueDisplay", "Sensor value: $sensorValue")
-    Text(text = "Valor del sensor: $sensorValue")
-}
-
-@Composable
-fun RequestPermissionsView() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Se requieren permisos para continuar")
+        SensorList(sensors) { sensorId ->
+            selectedSensorId = sensorId
+            showDialog = true
+        }
     }
 }
 
@@ -84,20 +77,23 @@ fun TextoBusqueda(viewModel: SensorConnectionViewModel, context: Context) {
 }
 
 @Composable
-fun DeviceListDisplay(devices: List<Device>) {
+fun SensorList(sensors: List<Sensor>, onSensorClick: (String) -> Unit) {
     LazyColumn {
-        items(devices) { device ->
-            DeviceItem(device)
+        items(sensors) { sensor ->
+            SensorItem(sensor) {
+                onSensorClick(sensor.id)
+            }
         }
     }
 }
 
 @Composable
-fun DeviceItem(device: Device) {
+fun SensorItem(sensor: Sensor, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
@@ -113,8 +109,43 @@ fun DeviceItem(device: Device) {
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(text = device.name, fontWeight = FontWeight.Bold)
-                Text(text = "Estado: ${device.status}")
+                Text(text = "Sensor ID: ${sensor.id}", fontWeight = FontWeight.Bold)
+                Text(text = "IP: ${sensor.ip}")
+                Text(text = "Humedad: ${sensor.humedad}")
+            }
+        }
+    }
+}
+
+@Composable
+fun SensorNameDialog(onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    var text by remember { mutableStateOf(TextFieldValue("")) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            shadowElevation = 24.dp
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "Introduce el nombre del sensor", style = MaterialTheme.typography.titleLarge)
+                TextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text("Nombre del sensor") }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row {
+                    Button(onClick = onDismiss) {
+                        Text("Cancelar")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
+                        onSave(text.text)
+                        onDismiss()
+                    }) {
+                        Text("Guardar")
+                    }
+                }
             }
         }
     }
