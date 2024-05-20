@@ -1,37 +1,33 @@
-package com.example.plantaura2.ui.plantDetails.ui
+package com.example.plantaura2.ui.plantdetails.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.plantaura2.ui.plantDetails.ui.PlantDetailsViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 
 @Composable
-fun PlantDetailsScreen(sensorId: String, viewModel: PlantDetailsViewModel = viewModel(factory = PlantDetailsViewModelFactory(sensorId))) {
-    val sensorData by viewModel.sensorData.collectAsState()
+fun PlantDetailsScreen(navController: NavController, plantName: String) {
+    val viewModel: PlantDetailsViewModel = viewModel(factory = PlantDetailsViewModelFactory(plantName))
+    val plantName by viewModel.plantName.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.refreshData()
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        sensorData?.let { sensor ->
-            Text(text = "Sensor ID: ${sensor.id}", fontWeight = FontWeight.Bold, fontSize = 24.sp)
-            Text(text = "IP: ${sensor.ip}", fontSize = 20.sp)
-            Text(text = "Humedad: ${sensor.humedad}%", fontSize = 20.sp)
-        } ?: run {
-            CircularProgressIndicator()
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(text = "Detalles de la Planta", style = MaterialTheme.typography.titleLarge)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = "Nombre: $plantName", style = MaterialTheme.typography.bodyLarge)
         }
     }
 }

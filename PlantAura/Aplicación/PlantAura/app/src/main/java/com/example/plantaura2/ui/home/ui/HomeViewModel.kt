@@ -37,11 +37,17 @@ class HomeViewModel(private val getPlantNamesUseCase: GetPlantNamesUseCase) : Vi
     fun onSettingsClick(navController: NavController) {
         navController.navigate("settings")
     }
+
     fun onHomeClick(navController: NavController) {
         navController.navigate("home")
     }
+
     fun onProfileClick(navController: NavController) {
         navController.navigate("profile")
+    }
+
+    fun onPlantSelected(navController: NavController, plantName: String) {
+        navController.navigate("plantDetails/$plantName")
     }
 }
 
@@ -55,5 +61,3 @@ class HomeViewModelFactory(private val getPlantNamesUseCase: GetPlantNamesUseCas
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
-
-

@@ -1,9 +1,11 @@
 package com.example.plantaura2.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.plantaura2.ui.home.ui.HomeScreen
 import com.example.plantaura2.ui.home.ui.HomeViewModel
 import com.example.plantaura2.ui.login.ui.LoginScreen
@@ -18,7 +20,7 @@ import com.example.plantaura2.ui.settings.ui.SettingsScreen
 import com.example.plantaura2.ui.settings.ui.SettingsViewModel
 import com.example.plantaura2.ui.signup.ui.SignUpScreen
 import com.example.plantaura2.ui.signup.ui.SignUpViewModel
-import com.example.plantaura2.ui.plantDetails.ui.PlantDetailsScreen
+import com.example.plantaura2.ui.plantdetails.ui.PlantDetailsScreen
 
 @Composable
 fun AppNavigation(
@@ -53,9 +55,12 @@ fun AppNavigation(
         composable(Screen.Settings.route) {
             SettingsScreen(viewModel = settingsViewModel, navController = navController)
         }
-        composable("plantDetails/{sensorId}") { backStackEntry ->
-            val sensorId = backStackEntry.arguments?.getString("sensorId") ?: return@composable
-            PlantDetailsScreen(sensorId = sensorId)
+        composable(
+            route = "${Screen.PlantDetails.route}/{plantName}",
+            arguments = listOf(navArgument("plantName") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val plantName = backStackEntry.arguments?.getString("plantName") ?: ""
+            PlantDetailsScreen(navController = navController, plantName = plantName)
         }
     }
 }

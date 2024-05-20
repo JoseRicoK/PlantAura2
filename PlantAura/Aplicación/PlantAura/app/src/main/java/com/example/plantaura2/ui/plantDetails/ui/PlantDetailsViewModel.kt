@@ -1,49 +1,40 @@
-package com.example.plantaura2.ui.plantDetails.ui
+package com.example.plantaura2.ui.plantdetails.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.plantaura2.ui.sensorConnection.ui.Sensor
-import kotlinx.coroutines.delay
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
-class PlantDetailsViewModel(private val sensorId: String) : ViewModel() {
-
-    private val _sensorData = MutableStateFlow<Sensor?>(null)
-    val sensorData: StateFlow<Sensor?> = _sensorData
+class PlantDetailsViewModel(private val plantNameInput: String) : ViewModel() {
+    private val _plantName = MutableStateFlow("")
+    val plantName: StateFlow<String> = _plantName
 
     init {
-        loadSensorData()
+        fetchPlantDetails()
     }
 
-    private fun loadSensorData() {
-        // Simulate data loading, you can replace this with actual data fetching logic
+    private fun fetchPlantDetails() {
         viewModelScope.launch {
-            // Suppose we fetch the data from Firebase or any other source
-            val sensor = Sensor(sensorId, "192.168.5.222", 50) // Example data
-            _sensorData.value = sensor
-        }
-    }
-
-    fun refreshData() {
-        // Refresh data every 60 seconds
-        viewModelScope.launch {
-            while (true) {
-                delay(60000)
-                loadSensorData()
+            try {
+                val document = FirebaseFirestore.getInstance().collection("Plantas").whereEqualTo("name", plantNameInput).get().await()
+                val name = document.documents.firstOrNull()?.getString("name") ?: "Unknown"
+                _plantName.value = name
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
 }
 
-class PlantDetailsViewModelFactory(private val sensorId: String) :
-    ViewModelProvider.Factory {
+class PlantDetailsViewModelFactory(private val plantNameInput: String) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PlantDetailsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return PlantDetailsViewModel(sensorId) as T
+            return PlantDetailsViewModel(plantNameInput) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
