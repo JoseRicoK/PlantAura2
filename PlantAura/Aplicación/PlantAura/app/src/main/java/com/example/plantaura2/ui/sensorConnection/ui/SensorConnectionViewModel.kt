@@ -58,7 +58,7 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
         viewModelScope.launch {
             try {
                 val jmdns = withContext(Dispatchers.IO) {
-                    JmDNS.create(InetAddress.getByName("192.168.5.222")).apply {
+                    JmDNS.create(InetAddress.getByName("172.20.10.2")).apply {
                         Log.d("SensorConnectionViewModel", "JmDNS created")
                     }
                 }
