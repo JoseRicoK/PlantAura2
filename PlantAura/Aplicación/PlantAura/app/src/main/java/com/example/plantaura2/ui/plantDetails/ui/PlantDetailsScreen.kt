@@ -1,6 +1,7 @@
 package com.example.plantaura2.ui.plantDetails.ui
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,9 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,7 +37,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.plantaura2.domain.model.MeasurementData
-import com.example.plantaura2.domain.model.PlantTypeRanges
 import com.example.plantaura2.domain.usecase.GetPlantTypeByNameUseCase
 import com.example.plantaura2.domain.usecase.GetPlantTypeRangesUseCase
 import com.example.plantaura2.domain.usecase.GraphUseCase
@@ -83,14 +86,18 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            if (plantType.isNotEmpty()) {
+            if (plantType.isNotEmpty() && plantTypeRanges != null) {
                 PlantTypeDetails(
                     plantType = plantType,
-                    plantTypeRanges = plantTypeRanges,
                     lastHumidityAmbiente = lastHumidityAmbiente,
                     lastHumiditySuelo = lastHumiditySuelo,
                     lastTemperature = lastTemperature,
-                    lastLuminosidad = lastLuminosidad
+                    lastLuminosidad = lastLuminosidad,
+                    humidityAmbienteRange = plantTypeRanges?.humedadAmbienteMin?.let { min -> plantTypeRanges?.humedadAmbienteMax?.let { max -> min..max } } ?: 0..100,
+                    humiditySueloRange = plantTypeRanges?.humedadSueloMin?.let { min -> plantTypeRanges?.humedadSueloMax?.let { max -> min..max } } ?: 0..100,
+                    temperatureRange = plantTypeRanges?.temperaturaAmbienteMin?.toFloat()?.let { min -> plantTypeRanges?.temperaturaAmbienteMax?.toFloat()?.let { max -> min..max } } ?: 0f..100f,
+                    luminosidadRange = plantTypeRanges?.luzMin?.toFloat()?.let { min -> plantTypeRanges?.luzMax?.toFloat()?.let { max -> min..max } } ?: 0f..100f,
+                    viewModel = viewModel
                 )
             } else {
                 Text(
@@ -99,6 +106,8 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
+
+
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -116,11 +125,15 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
 @Composable
 fun PlantTypeDetails(
     plantType: String,
-    plantTypeRanges: PlantTypeRanges?,
     lastHumidityAmbiente: Int?,
     lastHumiditySuelo: Int?,
     lastTemperature: Float?,
-    lastLuminosidad: Float?
+    lastLuminosidad: Float?,
+    humidityAmbienteRange: IntRange,
+    humiditySueloRange: IntRange,
+    temperatureRange: ClosedFloatingPointRange<Float>,
+    luminosidadRange: ClosedFloatingPointRange<Float>,
+    viewModel: PlantDetailsViewModel
 ) {
     Column(
         modifier = Modifier
@@ -143,42 +156,44 @@ fun PlantTypeDetails(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        plantTypeRanges?.let { ranges ->
-            if (lastHumidityAmbiente != null) {
-                ParameterStatusRow(
-                    parameterName = "Humedad Ambiente",
-                    parameterValue = lastHumidityAmbiente,
-                    range = ranges.humedadAmbienteMin..ranges.humedadAmbienteMax,
-                    isPercentage = true
-                )
-            }
+        if (lastHumidityAmbiente != null) {
+            ParameterStatusRow(
+                parameterName = "Humedad Ambiente",
+                parameterValue = lastHumidityAmbiente,
+                range = humidityAmbienteRange,
+                recommendation = viewModel.getRecommendation("Humedad Ambiente", lastHumidityAmbiente.toFloat(), humidityAmbienteRange.start.toFloat()..humidityAmbienteRange.endInclusive.toFloat()),
+                unit = "%"
+            )
+        }
 
-            if (lastHumiditySuelo != null) {
-                ParameterStatusRow(
-                    parameterName = "Humedad Suelo",
-                    parameterValue = lastHumiditySuelo,
-                    range = ranges.humedadSueloMin..ranges.humedadSueloMax,
-                    isPercentage = true
-                )
-            }
+        if (lastHumiditySuelo != null) {
+            ParameterStatusRow(
+                parameterName = "Humedad Suelo",
+                parameterValue = lastHumiditySuelo,
+                range = humiditySueloRange,
+                recommendation = viewModel.getRecommendation("Humedad Suelo", lastHumiditySuelo.toFloat(), humiditySueloRange.start.toFloat()..humiditySueloRange.endInclusive.toFloat()),
+                unit = "%"
+            )
+        }
 
-            if (lastTemperature != null) {
-                ParameterStatusRow(
-                    parameterName = "Temperatura",
-                    parameterValue = lastTemperature.toInt(),
-                    range = ranges.temperaturaAmbienteMin..ranges.temperaturaAmbienteMax,
-                    unit = "°C"
-                )
-            }
+        if (lastTemperature != null) {
+            ParameterStatusRow(
+                parameterName = "Temperatura",
+                parameterValue = lastTemperature.toInt(),
+                range = temperatureRange.start.toInt()..temperatureRange.endInclusive.toInt(),
+                recommendation = viewModel.getRecommendation("Temperatura", lastTemperature, temperatureRange),
+                unit = "ºC"
+            )
+        }
 
-            if (lastLuminosidad != null) {
-                ParameterStatusRow(
-                    parameterName = "Luminosidad",
-                    parameterValue = lastLuminosidad.toInt(),
-                    range = ranges.luzMin..ranges.luzMax,
-                    unit = " luxes"
-                )
-            }
+        if (lastLuminosidad != null) {
+            ParameterStatusRow(
+                parameterName = "Luminosidad",
+                parameterValue = lastLuminosidad.toInt(),
+                range = luminosidadRange.start.toInt()..luminosidadRange.endInclusive.toInt(),
+                recommendation = viewModel.getRecommendation("Luminosidad", lastLuminosidad, luminosidadRange),
+                unit = "luxes"
+            )
         }
 
         HorizontalDivider(
@@ -189,40 +204,73 @@ fun PlantTypeDetails(
     }
 }
 
+
 @Composable
 fun ParameterStatusRow(
     parameterName: String,
     parameterValue: Int,
     range: IntRange,
-    isPercentage: Boolean = false,
-    unit: String = ""
+    unit: String = "",
+    recommendation: String?
 ) {
     val isWithinRange = parameterValue in range
     val statusIcon = if (isWithinRange) {
-        "✅"
+        "✅" // Emoji for "within range"
     } else {
-        "❌"
+        "❌" // Emoji for "out of range"
     }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 12.dp)
-    ) {
-        Text(
-            text = "$parameterName: ",
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-        )
-        Text(
-            text = if (isPercentage) "$parameterValue%" else "$parameterValue$unit",
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = statusIcon,
-            style = MaterialTheme.typography.bodyLarge
-        )
+    Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(vertical = 12.dp)
+        ) {
+            Text(
+                text = "$parameterName: ",
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+            )
+            Text(
+                text = "$parameterValue $unit",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = statusIcon,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+        if (!isWithinRange && recommendation != null) {
+            Card(
+                modifier = Modifier
+                    .padding(start = 16.dp)
+                    .fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFFFF3E0),
+                    ),
+                border = BorderStroke(1.dp, Color(0xFFFFA500)) // Orange border
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = Color(0xFFFFA500), // Orange color for the icon
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = recommendation,
+                        color = Color.Black,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
     }
 }
+
+
 
 @Composable
 fun MeasurementSection(
@@ -330,7 +378,7 @@ fun MeasurementSection(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Luminosidad: $lastLuminosidad lux",
+                text = "Luminosidad: $lastLuminosidad luxes",
                 style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
             )
             Spacer(modifier = Modifier.height(16.dp))

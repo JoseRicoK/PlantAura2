@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.plantaura2.data.repository.Recommendations
 import com.example.plantaura2.domain.model.MeasurementData
 import com.example.plantaura2.domain.model.PlantTypeRanges
 import com.example.plantaura2.domain.usecase.GetPlantTypeByNameUseCase
@@ -87,14 +88,17 @@ class PlantDetailsViewModel(
             try {
                 Log.d("PlantDetailsViewModel", "Fetching measurement data for plantId: $plantId")
                 val data = graphUseCase.getMeasurementData(plantId)
+                Log.d("PlantDetailsViewModel", "Original measurement data: $data")
                 _measurementData.value = data
-                Log.d("PlantDetailsViewModel", "Measurement data fetched: $data")
 
                 if (data.isNotEmpty()) {
-                    _lastHumidityAmbiente.value = data.last().humedadAmbiente
-                    _lastHumiditySuelo.value = data.last().humedadSuelo
-                    _lastTemperature.value = data.last().temperatura
-                    _lastLuminosidad.value = data.last().luminosidad
+                    // Asumiendo que data está ordenado de más antiguo a más reciente
+                    val reversedData = data.asReversed()
+                    Log.d("PlantDetailsViewModel", "Reversed measurement data: $reversedData")
+                    _lastHumidityAmbiente.value = reversedData.last().humedadAmbiente
+                    _lastHumiditySuelo.value = reversedData.last().humedadSuelo
+                    _lastTemperature.value = reversedData.last().temperatura
+                    _lastLuminosidad.value = reversedData.last().luminosidad
                 }
             } catch (e: Exception) {
                 Log.e("PlantDetailsViewModel", "Error fetching measurement data: ${e.message}", e)
@@ -116,6 +120,19 @@ class PlantDetailsViewModel(
             } catch (e: Exception) {
                 Log.e("PlantDetailsViewModel", "Error fetching plant type ranges: ${e.message}", e)
             }
+        }
+    }
+
+    fun getRecommendation(parameterName: String, value: Float, range: ClosedFloatingPointRange<Float>): String? {
+        val recommendation = Recommendations.recommendations.find { it.parameterName == parameterName }
+        return if (recommendation != null) {
+            when {
+                value > range.endInclusive -> recommendation.highMessage
+                value < range.start -> recommendation.lowMessage
+                else -> null
+            }
+        } else {
+            null
         }
     }
 }
