@@ -1,11 +1,9 @@
 package com.example.plantaura2.domain.usecase
 
+import android.util.Log
 import com.example.plantaura2.domain.model.MeasurementData
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
-import java.text.SimpleDateFormat
-import java.util.*
-import android.util.Log
 
 class GraphUseCase(private val firestore: FirebaseFirestore) {
 
@@ -30,11 +28,12 @@ class GraphUseCase(private val firestore: FirebaseFirestore) {
                 val humedadAmbiente = document.getLong("humedadAmbiente")?.toInt()
                 val humedadSuelo = document.getLong("humedadSuelo")?.toInt()
                 val temperatura = document.getDouble("temperatura")?.toFloat()
+                val luminosidad = document.getDouble("luminosidad")?.toFloat() // Obtén el nuevo valor del sensor
 
-                Log.d(TAG, "Parsed data - timestamp: $timestampString, humedadAmbiente: $humedadAmbiente, humedadSuelo: $humedadSuelo, temperatura: $temperatura")
+                Log.d(TAG, "Parsed data - timestamp: $timestampString, humedadAmbiente: $humedadAmbiente, humedadSuelo: $humedadSuelo, temperatura: $temperatura, luminosidad: $luminosidad")
 
-                if (timestampString != null && humedadAmbiente != null && humedadSuelo != null && temperatura != null) {
-                    MeasurementData(timestampString, humedadAmbiente, humedadSuelo, temperatura)
+                if (timestampString != null && humedadAmbiente != null && humedadSuelo != null && temperatura != null && luminosidad != null) {
+                    MeasurementData(timestampString, humedadAmbiente, humedadSuelo, temperatura, luminosidad)
                 } else {
                     Log.d(TAG, "Skipping document with incomplete data: ${document.data}")
                     null
@@ -45,16 +44,6 @@ class GraphUseCase(private val firestore: FirebaseFirestore) {
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching measurement data: ${e.message}", e)
             emptyList()
-        }
-    }
-
-    private fun convertTimestamp(timestampString: String): Long? {
-        return try {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-            dateFormat.parse(timestampString)?.time
-        } catch (e: Exception) {
-            Log.e(TAG, "Error converting timestamp: ${e.message}", e)
-            null
         }
     }
 }

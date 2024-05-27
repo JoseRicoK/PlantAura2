@@ -38,6 +38,13 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
 
     private val firestore = FirebaseFirestore.getInstance()
 
+    private val _plantTypes = MutableStateFlow<List<String>>(emptyList())
+    val plantTypes: StateFlow<List<String>> = _plantTypes
+
+    init {
+        fetchPlantTypes()
+    }
+
     // Verifica si el dispositivo está conectado a WiFi
     private fun isConnectedToWiFi(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -143,10 +150,23 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
         }
     }
 
-    fun saveSensorToFirebase(sensorId: String, name: String, onSuccess: () -> Unit) {
+    private fun fetchPlantTypes() {
+        viewModelScope.launch {
+            try {
+                val snapshot = firestore.collection("TiposDePlantas").get().await()
+                val types = snapshot.documents.map { it.getString("nombreComun") ?: "" }
+                _plantTypes.value = types
+            } catch (e: Exception) {
+                Log.e("PlantTypeViewModel", "Error fetching plant types: ${e.message}")
+            }
+        }
+    }
+
+    fun saveSensorToFirebase(sensorId: String, name: String, plantType: String, onSuccess: () -> Unit) {
         val sensorData = hashMapOf(
             "id" to sensorId,
-            "name" to name
+            "name" to name,
+            "plantType" to plantType
             // Agrega otros campos que desees guardar
         )
 
@@ -160,6 +180,7 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
             }
         }
     }
+
 }
 
 // Factory para el ViewModel
