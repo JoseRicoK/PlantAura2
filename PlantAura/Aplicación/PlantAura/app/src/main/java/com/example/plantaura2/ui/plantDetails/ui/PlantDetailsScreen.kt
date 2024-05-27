@@ -1,31 +1,43 @@
 package com.example.plantaura2.ui.plantdetails.ui
 
 import android.util.Log
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.github.mikephil.charting.charts.LineChart
-import com.github.mikephil.charting.components.XAxis
-import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.data.LineData
-import com.github.mikephil.charting.data.LineDataSet
-import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
-import android.view.ViewGroup
-import androidx.compose.ui.viewinterop.AndroidView
 import com.example.plantaura2.domain.usecase.GraphUseCase
-import com.example.plantaura2.domain.model.HumidityData
 import com.google.firebase.firestore.FirebaseFirestore
+import com.jaikeerthick.composable_graphs.composables.line.LineGraph
+import com.jaikeerthick.composable_graphs.composables.line.model.LineData
+import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphColors
+import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphFillType
+import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphStyle
+import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphVisibility
+import kotlin.math.roundToInt
+
 
 @Composable
 fun PlantDetailsScreen(navController: NavController, plantName: String) {
@@ -33,112 +45,172 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         factory = PlantDetailsViewModelFactory(plantName, GraphUseCase(FirebaseFirestore.getInstance()))
     )
     val plantName by viewModel.plantName.collectAsState()
-    val humidityData by viewModel.humidityData.collectAsState()
-    val lastHumidity by viewModel.lastHumidity.collectAsState()
-    val humidityDeviation by viewModel.humidityDeviation.collectAsState()
+    val measurementData by viewModel.measurementData.collectAsState()
+    val lastHumidityAmbiente by viewModel.lastHumidityAmbiente.collectAsState()
+    val lastHumiditySuelo by viewModel.lastHumiditySuelo.collectAsState()
+    val lastTemperature by viewModel.lastTemperature.collectAsState()
 
     Log.d("PlantDetailsScreen", "Plant name: $plantName")
-    Log.d("PlantDetailsScreen", "Last humidity: $lastHumidity")
-    Log.d("PlantDetailsScreen", "Humidity deviation: $humidityDeviation")
+    Log.d("PlantDetailsScreen", "Last humidity ambiente: $lastHumidityAmbiente")
+    Log.d("PlantDetailsScreen", "Last humidity suelo: $lastHumiditySuelo")
+    Log.d("PlantDetailsScreen", "Last temperature: $lastTemperature")
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
+                .verticalScroll(rememberScrollState()) // Habilitar desplazamiento vertical
         ) {
-            Text(text = "Detalles de la Planta", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "Nombre: $plantName", style = MaterialTheme.typography.bodyLarge)
+            // Nombre de la planta arriba en el medio
+            Text(
+                text = plantName,
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp), // Incrementar el tamaño del texto
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            lastHumidity?.let {
-                Text(text = "Humedad: $it%", style = MaterialTheme.typography.headlineMedium)
-            }
-            humidityDeviation?.let {
-                val deviationText = if (it >= 0) "Now +${it.toInt()}%" else "Now ${it.toInt()}%"
-                Text(text = deviationText, style = TextStyle(color = if (it >= 0) Color.Green else Color.Red))
-            }
+            Spacer(modifier = Modifier.height(24.dp)) // Más separación
 
-            Spacer(modifier = Modifier.height(16.dp))
-            if (humidityData.isNotEmpty()) {
-                HumidityGraph(humidityData)
-            } else {
-                Text(text = "Cargando datos de humedad...")
-            }
-        }
-    }
-}
-
-@Composable
-fun HumidityGraph(humidityData: List<HumidityData>) {
-    val entries = humidityData.mapIndexed { index, data ->
-        Entry(index.toFloat(), data.humidity.toFloat())
-    }
-
-    val dataSet = LineDataSet(entries, "Humedad").apply {
-        lineWidth = 3f // Aumentamos el grosor de la línea
-        setDrawValues(false) // Eliminamos los valores numéricos de cada punto
-        valueTextColor = android.graphics.Color.BLACK
-        valueTextSize = 10f
-        setCircleColor(android.graphics.Color.BLACK) // Color de los puntos
-        circleRadius = 5f // Tamaño de los puntos
-
-        // Configurar colores graduales
-        for (i in entries.indices) {
-            val humidity = entries[i].y
-            val color = getGradientColor(humidity)
-            colors = listOf(color)
-        }
-    }
-
-    val lineData = LineData(dataSet)
-    LineChartWrapper(data = lineData)
-}
-
-fun getGradientColor(humidity: Float): Int {
-    return when {
-        humidity >= 60 -> android.graphics.Color.RED
-        humidity >= 40 -> android.graphics.Color.YELLOW
-        else -> android.graphics.Color.GREEN
-    }
-}
-
-@Composable
-fun LineChartWrapper(data: LineData) {
-    val context = LocalContext.current
-    AndroidView(
-        factory = {
-            LineChart(context).apply {
-                this.data = data
-                description.text = "Humedad en el tiempo"
-                animateX(1500)
-
-                // Configuración del eje X
-                xAxis.valueFormatter = IndexAxisValueFormatter((0 until data.dataSets[0].entryCount).map { it.toString() }) // Ajustar el formateador
-                xAxis.granularity = 1f
-                xAxis.position = XAxis.XAxisPosition.BOTTOM
-
-                // Configuración del eje Y izquierdo
-                axisLeft.granularity = 10f // Intervalos de 10 unidades
-                axisLeft.axisMinimum = 0f
-                axisLeft.axisMaximum = 100f
-
-                // Deshabilitar el eje derecho
-                axisRight.isEnabled = false
-
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
+            // Recuadro para humedad ambiente y gráfica
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp), // Ajustar la altura de la tarjeta
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 10.dp
                 )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Humedad Ambiente: $lastHumidityAmbiente%",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp) // Ajustar el tamaño del texto
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (measurementData.isNotEmpty()) {
+                        MeasurementGraph(measurementData.map { it.timestamp to it.humedadAmbiente }, "Humedad Ambiente")
+                    } else {
+                        Text(text = "Cargando datos de humedad ambiente...")
+                    }
+                }
             }
-        },
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Recuadro para humedad suelo y gráfica
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp), // Ajustar la altura de la tarjeta
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 10.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Humedad Suelo: $lastHumiditySuelo%",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp) // Ajustar el tamaño del texto
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (measurementData.isNotEmpty()) {
+                        MeasurementGraph(measurementData.map { it.timestamp to it.humedadSuelo }, "Humedad Suelo")
+                    } else {
+                        Text(text = "Cargando datos de humedad suelo...")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Recuadro para temperatura y gráfica
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp), // Ajustar la altura de la tarjeta
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 10.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Temperatura: $lastTemperature°C",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp) // Ajustar el tamaño del texto
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (measurementData.isNotEmpty()) {
+                        MeasurementGraph(measurementData.map { it.timestamp to it.temperatura.toInt() }, "Temperatura")
+                    } else {
+                        Text(text = "Cargando datos de temperatura...")
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
+    val reversedData = data.asReversed()
+    val xAxisData = reversedData.mapIndexed { index, dataPoint ->
+        when (index) {
+            0 -> dataPoint.first
+            reversedData.size - 1 -> dataPoint.first
+            else -> ""
+        }
+    }
+    val yAxisData = reversedData.map { it.second.toFloat() }
+
+    val darkGreen = Color(0xFF006400) // Definimos un color verde oscuro
+
+    // Obtener los valores mínimo y máximo de Y
+    val minY = yAxisData.minOrNull() ?: 0f
+    val maxY = yAxisData.maxOrNull() ?: 100f
+
+    // Crear etiquetas personalizadas para el eje Y
+    val yAxisLabels = (0..10).map { (minY + it * (maxY - minY) / 10).roundToInt().toString() }
+
+    val style = LineGraphStyle(
+        colors = LineGraphColors(
+            lineColor = darkGreen,
+            pointColor = Color.Transparent, // Hacemos los puntos transparentes
+            clickHighlightColor = darkGreen, // Resaltamos el punto seleccionado
+            crossHairColor = Color.Gray,
+            fillType = LineGraphFillType.Gradient(Brush.verticalGradient(
+                colors = listOf(darkGreen.copy(alpha = 0.4f), Color.Transparent)
+            ))
+        ),
+        visibility = LineGraphVisibility(
+            isCrossHairVisible = true,
+            isYAxisLabelVisible = true,
+            isXAxisLabelVisible = true,
+            isGridVisible = false
+        )
+    )
+
+    val clickedPoint = remember { mutableStateOf<LineData?>(null) }
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(300.dp),
-        update = { lineChart ->
-            lineChart.data = data
-            lineChart.invalidate()
-        }
-    )
+            .height(200.dp) // Ajustar la altura del contenedor
+    ) {
+        LineGraph(
+            modifier = Modifier.fillMaxSize(),
+            data = xAxisData.zip(yAxisData) { x, y -> LineData(x, y) },
+            style = style,
+            onPointClick = { point ->
+                clickedPoint.value = point
+                Log.d("MeasurementGraph", "Punto clicado: ${point.x}, ${point.y}")
+            }
+        )
+    }
 }

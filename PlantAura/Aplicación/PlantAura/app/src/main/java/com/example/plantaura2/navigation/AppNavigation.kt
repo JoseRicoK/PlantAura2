@@ -10,6 +10,7 @@ import com.example.plantaura2.ui.home.ui.HomeScreen
 import com.example.plantaura2.ui.home.ui.HomeViewModel
 import com.example.plantaura2.ui.login.ui.LoginScreen
 import com.example.plantaura2.ui.login.ui.LoginViewModel
+import com.example.plantaura2.ui.plantdetails.ui.PlantDetailsScreen
 import com.example.plantaura2.ui.profile.ui.ProfileScreen
 import com.example.plantaura2.ui.profile.ui.ProfileViewModel
 import com.example.plantaura2.ui.questionHub.ui.HubScreen
@@ -20,7 +21,6 @@ import com.example.plantaura2.ui.settings.ui.SettingsScreen
 import com.example.plantaura2.ui.settings.ui.SettingsViewModel
 import com.example.plantaura2.ui.signup.ui.SignUpScreen
 import com.example.plantaura2.ui.signup.ui.SignUpViewModel
-import com.example.plantaura2.ui.plantdetails.ui.PlantDetailsScreen
 
 @Composable
 fun AppNavigation(

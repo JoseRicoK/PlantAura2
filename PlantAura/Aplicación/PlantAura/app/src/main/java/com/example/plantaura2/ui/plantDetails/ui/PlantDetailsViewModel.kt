@@ -3,7 +3,7 @@ package com.example.plantaura2.ui.plantdetails.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.plantaura2.domain.model.HumidityData
+import com.example.plantaura2.domain.model.MeasurementData
 import com.example.plantaura2.domain.usecase.GraphUseCase
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,14 +21,17 @@ class PlantDetailsViewModel(private val plantNameInput: String, private val grap
     private val _plantName = MutableStateFlow("")
     val plantName: StateFlow<String> = _plantName
 
-    private val _humidityData = MutableStateFlow<List<HumidityData>>(emptyList())
-    val humidityData: StateFlow<List<HumidityData>> = _humidityData
+    private val _measurementData = MutableStateFlow<List<MeasurementData>>(emptyList())
+    val measurementData: StateFlow<List<MeasurementData>> = _measurementData
 
-    private val _lastHumidity = MutableStateFlow<Int?>(null)
-    val lastHumidity: StateFlow<Int?> = _lastHumidity
+    private val _lastHumidityAmbiente = MutableStateFlow<Int?>(null)
+    val lastHumidityAmbiente: StateFlow<Int?> = _lastHumidityAmbiente
 
-    private val _humidityDeviation = MutableStateFlow<Float?>(null)
-    val humidityDeviation: StateFlow<Float?> = _humidityDeviation
+    private val _lastHumiditySuelo = MutableStateFlow<Int?>(null)
+    val lastHumiditySuelo: StateFlow<Int?> = _lastHumiditySuelo
+
+    private val _lastTemperature = MutableStateFlow<Float?>(null)
+    val lastTemperature: StateFlow<Float?> = _lastTemperature
 
     init {
         fetchPlantDetails()
@@ -37,11 +40,16 @@ class PlantDetailsViewModel(private val plantNameInput: String, private val grap
     private fun fetchPlantDetails() {
         viewModelScope.launch {
             try {
+                Log.d("PlantDetailsViewModel", "Fetching plant details for name: $plantNameInput")
                 val snapshot = FirebaseFirestore.getInstance().collection("Plantas").whereEqualTo("name", plantNameInput).get().await()
+                Log.d("PlantDetailsViewModel", "Snapshot size: ${snapshot.size()}")
                 val plant = snapshot.documents.firstOrNull()?.toObject(Plant::class.java)
                 if (plant != null) {
+                    Log.d("PlantDetailsViewModel", "Plant found: $plant")
                     _plantName.value = plant.name
-                    fetchHumidityData(plant.id)
+                    fetchMeasurementData(plant.id)
+                } else {
+                    Log.d("PlantDetailsViewModel", "No plant found with name: $plantNameInput")
                 }
             } catch (e: Exception) {
                 Log.e("PlantDetailsViewModel", "Error fetching plant details: ${e.message}", e)
@@ -49,21 +57,21 @@ class PlantDetailsViewModel(private val plantNameInput: String, private val grap
         }
     }
 
-    private fun fetchHumidityData(plantId: String) {
+    private fun fetchMeasurementData(plantId: String) {
         viewModelScope.launch {
             try {
-                val data = graphUseCase.getHumidityData(plantId)
-                _humidityData.value = data
-                Log.d("PlantDetailsViewModel", "Humidity data fetched: $data")
+                Log.d("PlantDetailsViewModel", "Fetching measurement data for plantId: $plantId")
+                val data = graphUseCase.getMeasurementData(plantId)
+                _measurementData.value = data
+                Log.d("PlantDetailsViewModel", "Measurement data fetched: $data")
 
                 if (data.isNotEmpty()) {
-                    _lastHumidity.value = data.last().humidity
-                    val last10Values = data.takeLast(10).map { it.humidity }
-                    val average = last10Values.average().toFloat()
-                    _humidityDeviation.value = ((last10Values.last() - average) / average) * 100
+                    _lastHumidityAmbiente.value = data.last().humedadAmbiente
+                    _lastHumiditySuelo.value = data.last().humedadSuelo
+                    _lastTemperature.value = data.last().temperatura
                 }
             } catch (e: Exception) {
-                Log.e("PlantDetailsViewModel", "Error fetching humidity data: ${e.message}", e)
+                Log.e("PlantDetailsViewModel", "Error fetching measurement data: ${e.message}", e)
             }
         }
     }

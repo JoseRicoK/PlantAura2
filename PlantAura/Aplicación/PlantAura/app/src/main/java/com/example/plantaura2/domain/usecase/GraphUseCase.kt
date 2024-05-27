@@ -1,6 +1,6 @@
 package com.example.plantaura2.domain.usecase
 
-import com.example.plantaura2.domain.model.HumidityData
+import com.example.plantaura2.domain.model.MeasurementData
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
@@ -13,20 +13,37 @@ class GraphUseCase(private val firestore: FirebaseFirestore) {
         const val TAG = "GraphUseCase"
     }
 
-    suspend fun getHumidityData(plantId: String): List<HumidityData> {
+    suspend fun getMeasurementData(plantId: String): List<MeasurementData> {
+        Log.d(TAG, "Fetching measurement data for plantId: $plantId")
         return try {
             val snapshot = firestore.collection("Plantas").document(plantId).collection("datos")
-                .orderBy("timestamp").limit(20).get().await()
-            val data = snapshot.documents.mapNotNull { document ->
-                val timestampString = document.getString("timestamp") ?: return@mapNotNull null
-                val timestamp = convertTimestamp(timestampString) ?: return@mapNotNull null
-                val humidity = document.getLong("humedad")?.toInt() ?: return@mapNotNull null
-                HumidityData(timestampString, humidity)
+                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING).limit(20).get().await()
+            Log.d(TAG, "Snapshot size: ${snapshot.size()}")
+
+            snapshot.documents.forEach { document ->
+                Log.d(TAG, "Document ID: ${document.id}")
+                Log.d(TAG, "Document data: ${document.data}")
             }
-            Log.d(TAG, "Humidity data fetched: $data")
+
+            val data = snapshot.documents.mapNotNull { document ->
+                val timestampString = document.getString("timestamp")
+                val humedadAmbiente = document.getLong("humedadAmbiente")?.toInt()
+                val humedadSuelo = document.getLong("humedadSuelo")?.toInt()
+                val temperatura = document.getDouble("temperatura")?.toFloat()
+
+                Log.d(TAG, "Parsed data - timestamp: $timestampString, humedadAmbiente: $humedadAmbiente, humedadSuelo: $humedadSuelo, temperatura: $temperatura")
+
+                if (timestampString != null && humedadAmbiente != null && humedadSuelo != null && temperatura != null) {
+                    MeasurementData(timestampString, humedadAmbiente, humedadSuelo, temperatura)
+                } else {
+                    Log.d(TAG, "Skipping document with incomplete data: ${document.data}")
+                    null
+                }
+            }
+            Log.d(TAG, "Measurement data fetched: $data")
             data
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching humidity data: ${e.message}", e)
+            Log.e(TAG, "Error fetching measurement data: ${e.message}", e)
             emptyList()
         }
     }

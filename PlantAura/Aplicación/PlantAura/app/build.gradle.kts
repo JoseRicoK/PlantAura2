@@ -77,6 +77,9 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation("com.github.jaikeerthick:Composable-Graphs:v1.2.3")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
 
     // Firebase dependencies
     implementation("com.google.firebase:firebase-auth-ktx:23.0.0")
