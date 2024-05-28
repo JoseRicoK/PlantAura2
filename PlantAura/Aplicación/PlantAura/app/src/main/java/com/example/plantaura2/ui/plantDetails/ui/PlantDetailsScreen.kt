@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -47,8 +48,6 @@ import com.example.plantaura2.domain.model.PlantTypeRanges
 import com.example.plantaura2.domain.usecase.GetPlantTypeByNameUseCase
 import com.example.plantaura2.domain.usecase.GetPlantTypeRangesUseCase
 import com.example.plantaura2.domain.usecase.GraphUseCase
-import com.example.plantaura2.ui.plantdetails.ui.PlantDetailsViewModel
-import com.example.plantaura2.ui.plantdetails.ui.PlantDetailsViewModelFactory
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jaikeerthick.composable_graphs.composables.line.LineGraph
 import com.jaikeerthick.composable_graphs.composables.line.model.LineData
@@ -76,6 +75,11 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
     val lastTemperature by viewModel.lastTemperature.collectAsState()
     val lastLuminosidad by viewModel.lastLuminosidad.collectAsState()
     val revive by viewModel.revive.collectAsState()
+    val (showDialog, setShowDialog) = remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        ReviveInfoDialog(onDismiss = { setShowDialog(false) })
+    }
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -107,9 +111,6 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                     luminosidadRange = plantTypeRanges?.luzMin?.toFloat()?.let { min -> plantTypeRanges?.luzMax?.toFloat()?.let { max -> min..max } } ?: 0f..100f,
                     viewModel = viewModel
                 )
-
-
-
             } else {
                 Text(
                     text = "Cargando datos de la planta...",
@@ -140,6 +141,10 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                     onClick = {
                         if (plantId != null) {
                             viewModel.toggleRevive(plantId, revive)
+                            if (!revive) {
+                                // Mostrar el diálogo solo si se está activando el modo revive
+                                setShowDialog(true)
+                            }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = if (revive) Color.Red else Color.Green)
@@ -150,6 +155,8 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         }
     }
 }
+
+
 
 
 
@@ -181,7 +188,7 @@ fun PlantTypeDetails(
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -194,7 +201,7 @@ fun PlantTypeDetails(
         val revive by viewModel.revive.collectAsState()
 
         if (revive) {
-            ReviveSection()
+            ReviveSection(viewModel = viewModel)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -238,6 +245,8 @@ fun PlantTypeDetails(
                 unit = "luxes"
             )
         }
+
+        Spacer(modifier = Modifier.height(14.dp))
 
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -496,31 +505,18 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
 }
 
 @Composable
-fun ReviveSection() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp) // Ajustamos el padding vertical
-    ) {
-        Text(
-            text = "Revive Activado",
-            style = MaterialTheme.typography.headlineSmall.copy(color = Color.Red)
-        )
-        ReviveRecommendation(
-            recommendation = "Elimina todos los tallos y hojas marchitas."
-        )
-        ReviveRecommendation(
-            recommendation = "Retira, con sumo cuidado, la parte superficial del sustrato."
-        )
-        ReviveRecommendation(
-            recommendation = "Saca el cepellón de la planta y ponlo en agua tibia 10 minutos."
-        )
-        ReviveRecommendation(
-            recommendation = "Sécalo un poco y ponlo en tierra nueva."
-        )
-        ReviveRecommendation(
-            recommendation = "Coloca la planta en un sitio iluminado."
-        )
+fun ReviveSection(viewModel: PlantDetailsViewModel) {
+    val filteredRecommendations by viewModel.filteredRecommendations.collectAsState()
+
+    Column {
+        filteredRecommendations.forEachIndexed { index, recommendation ->
+            ReviveRecommendation(
+                recommendation = recommendation,
+                onClose = {
+                    viewModel.hideRecommendation(index)
+                }
+            )
+        }
     }
 
     Spacer(modifier = Modifier.height(14.dp))
@@ -533,11 +529,11 @@ fun ReviveSection() {
 }
 
 @Composable
-fun ReviveRecommendation(recommendation: String) {
+fun ReviveRecommendation(recommendation: String, onClose: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp), // Ajustamos el padding vertical
+            .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFFFFE5E5),
         ),
@@ -559,10 +555,10 @@ fun ReviveRecommendation(recommendation: String) {
                 text = recommendation,
                 color = Color.Black,
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.weight(1f) // Asigna un weight al texto
+                modifier = Modifier.weight(1f)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            IconButton(onClick = { /* Lógica para cerrar la recomendación */ }) {
+            IconButton(onClick = onClose) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Close",
@@ -572,3 +568,26 @@ fun ReviveRecommendation(recommendation: String) {
         }
     }
 }
+
+@Composable
+fun ReviveInfoDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = "Revive Activado", style = MaterialTheme.typography.headlineMedium)
+        },
+        text = {
+            Column {
+                Text("Las recomendaciones a seguir se mostrarán en la parte superior.")
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Los sensores medirán con mayor frecuencia y precisión.")
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Entendido")
+            }
+        }
+    )
+}
+

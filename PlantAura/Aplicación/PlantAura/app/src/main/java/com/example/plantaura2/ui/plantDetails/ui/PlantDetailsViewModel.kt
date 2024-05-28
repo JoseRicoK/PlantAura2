@@ -1,4 +1,4 @@
-package com.example.plantaura2.ui.plantdetails.ui
+package com.example.plantaura2.ui.plantDetails.ui
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.plantaura2.data.repository.Recommendations
 import com.example.plantaura2.domain.model.MeasurementData
+import com.example.plantaura2.domain.model.Plant
 import com.example.plantaura2.domain.model.PlantTypeRanges
 import com.example.plantaura2.domain.usecase.GetPlantTypeByNameUseCase
 import com.example.plantaura2.domain.usecase.GetPlantTypeRangesUseCase
@@ -16,11 +17,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-data class Plant(
-    val id: String = "",
-    val name: String = "",
-    val plantType: String = ""
-)
 
 class PlantDetailsViewModel(
     private val plantNameInput: String,
@@ -58,9 +54,66 @@ class PlantDetailsViewModel(
     private val _plantId = MutableStateFlow<String?>(null)
     val plantId: StateFlow<String?> = _plantId
 
+    private val _recommendations = MutableStateFlow<List<String>>(emptyList())
+    val recommendations: StateFlow<List<String>> = _recommendations
+
+    private val _hiddenRecommendations = MutableStateFlow<Set<Int>>(emptySet())
+    val hiddenRecommendations: StateFlow<Set<Int>> = _hiddenRecommendations
+
+    private val _filteredRecommendations = MutableStateFlow<List<String>>(emptyList())
+    val filteredRecommendations: StateFlow<List<String>> = _filteredRecommendations
+
+
+
     init {
         fetchPlantDetails()
     }
+
+    private fun fetchRecommendations(plantId: String) {
+        viewModelScope.launch {
+            try {
+                val documentSnapshot = FirebaseFirestore.getInstance()
+                    .collection("Plantas")
+                    .document(plantId)
+                    .get()
+                    .await()
+
+                val plant = documentSnapshot.toObject(Plant::class.java)
+                if (plant != null) {
+                    _recommendations.value = plant.recommendations
+                    _hiddenRecommendations.value = plant.hiddenRecommendations.toSet()
+                    updateFilteredRecommendations()
+
+                    Log.d("PlantDetailsViewModel", "Fetched recommendations: ${plant.recommendations}")
+                    Log.d("PlantDetailsViewModel", "Fetched hidden recommendations: ${plant.hiddenRecommendations}")
+                } else {
+                    Log.d("PlantDetailsViewModel", "No plant found with id: $plantId")
+                }
+            } catch (e: Exception) {
+                Log.e("PlantDetailsViewModel", "Error fetching recommendations: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun updateFilteredRecommendations() {
+        val hidden = _hiddenRecommendations.value
+        _filteredRecommendations.value = _recommendations.value.filterIndexed { index, _ -> !hidden.contains(index) }
+    }
+    fun hideRecommendation(index: Int) {
+        viewModelScope.launch {
+            val currentHiddenRecommendations = _hiddenRecommendations.value.toMutableSet()
+            currentHiddenRecommendations.add(index)
+            _hiddenRecommendations.value = currentHiddenRecommendations
+            plantId.value?.let {
+                FirebaseFirestore.getInstance()
+                    .collection("Plantas")
+                    .document(it)
+                    .update("hiddenRecommendations", currentHiddenRecommendations.toList())
+            }
+            updateFilteredRecommendations()
+        }
+    }
+
 
     private fun fetchPlantDetails() {
         viewModelScope.launch {
@@ -78,14 +131,33 @@ class PlantDetailsViewModel(
                     Log.d("PlantDetailsViewModel", "Plant found: $plant")
                     _plantName.value = plant.name
                     _plantType.value = plant.plantType
-                    _plantId.value = plant.id  // Set plantId here
+                    _plantId.value = plant.id // Guardar el plantId
                     fetchMeasurementData(plant.id)
                     fetchPlantTypeRanges(plant.plantType)
+                    fetchRecommendations(plant.id)
+                    fetchReviveState(plant.id)
                 } else {
                     Log.d("PlantDetailsViewModel", "No plant found with name: $plantNameInput")
                 }
             } catch (e: Exception) {
                 Log.e("PlantDetailsViewModel", "Error fetching plant details: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun fetchReviveState(plantId: String) {
+        viewModelScope.launch {
+            try {
+                val documentSnapshot = FirebaseFirestore.getInstance()
+                    .collection("Plantas")
+                    .document(plantId)
+                    .get()
+                    .await()
+
+                val reviveState = documentSnapshot.getBoolean("revive") ?: false
+                _revive.value = reviveState
+            } catch (e: Exception) {
+                Log.e("PlantDetailsViewModel", "Error fetching revive state: ${e.message}", e)
             }
         }
     }
