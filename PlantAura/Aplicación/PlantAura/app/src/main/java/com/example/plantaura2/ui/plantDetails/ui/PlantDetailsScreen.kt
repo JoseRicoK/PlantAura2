@@ -2,6 +2,7 @@ package com.example.plantaura2.ui.plantDetails.ui
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,15 +11,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -37,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.plantaura2.domain.model.MeasurementData
+import com.example.plantaura2.domain.model.PlantTypeRanges
 import com.example.plantaura2.domain.usecase.GetPlantTypeByNameUseCase
 import com.example.plantaura2.domain.usecase.GetPlantTypeRangesUseCase
 import com.example.plantaura2.domain.usecase.GraphUseCase
@@ -64,11 +71,11 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
     val plantName by viewModel.plantName.collectAsState()
     val plantType by viewModel.plantType.collectAsState()
     val plantTypeRanges by viewModel.plantTypeRanges.collectAsState()
-    val measurementData by viewModel.measurementData.collectAsState()
     val lastHumidityAmbiente by viewModel.lastHumidityAmbiente.collectAsState()
     val lastHumiditySuelo by viewModel.lastHumiditySuelo.collectAsState()
     val lastTemperature by viewModel.lastTemperature.collectAsState()
     val lastLuminosidad by viewModel.lastLuminosidad.collectAsState()
+    val revive by viewModel.revive.collectAsState()
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -77,7 +84,7 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = plantName,
                 style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp),
@@ -89,6 +96,7 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
             if (plantType.isNotEmpty() && plantTypeRanges != null) {
                 PlantTypeDetails(
                     plantType = plantType,
+                    plantTypeRanges = plantTypeRanges!!, // Not null assert
                     lastHumidityAmbiente = lastHumidityAmbiente,
                     lastHumiditySuelo = lastHumiditySuelo,
                     lastTemperature = lastTemperature,
@@ -99,6 +107,9 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                     luminosidadRange = plantTypeRanges?.luzMin?.toFloat()?.let { min -> plantTypeRanges?.luzMax?.toFloat()?.let { max -> min..max } } ?: 0f..100f,
                     viewModel = viewModel
                 )
+
+
+
             } else {
                 Text(
                     text = "Cargando datos de la planta...",
@@ -107,24 +118,48 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                 )
             }
 
-
-
             Spacer(modifier = Modifier.height(16.dp))
 
             MeasurementSection(
-                measurementData = measurementData,
+                measurementData = viewModel.measurementData.collectAsState().value,
                 lastHumidityAmbiente = lastHumidityAmbiente,
                 lastHumiditySuelo = lastHumiditySuelo,
                 lastTemperature = lastTemperature,
                 lastLuminosidad = lastLuminosidad
             )
+
+            // Botón "Revive"
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center // Centrar horizontalmente
+            ) {
+                val plantId = viewModel.plantId.collectAsState().value
+                Button(
+                    onClick = {
+                        if (plantId != null) {
+                            viewModel.toggleRevive(plantId, revive)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (revive) Color.Red else Color.Green)
+                ) {
+                    Text(text = if (revive) "Desactivar Revive" else "Activar Revive")
+                }
+            }
         }
     }
 }
 
+
+
+
+
+
 @Composable
 fun PlantTypeDetails(
     plantType: String,
+    plantTypeRanges: PlantTypeRanges,
     lastHumidityAmbiente: Int?,
     lastHumiditySuelo: Int?,
     lastTemperature: Float?,
@@ -153,6 +188,14 @@ fun PlantTypeDetails(
             thickness = 0.7.dp,
             color = Color.Gray
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        val revive by viewModel.revive.collectAsState()
+
+        if (revive) {
+            ReviveSection()
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -242,12 +285,14 @@ fun ParameterStatusRow(
         if (!isWithinRange && recommendation != null) {
             Card(
                 modifier = Modifier
-                    .padding(start = 16.dp)
+                    .align(Alignment.CenterHorizontally)
                     .fillMaxWidth(),
+
                 colors = CardDefaults.cardColors(
                     containerColor = Color(0xFFFFF3E0),
                     ),
-                border = BorderStroke(1.dp, Color(0xFFFFA500)) // Orange border
+                border = BorderStroke(1.dp, Color(0xFFFFA500)),
+
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -450,3 +495,80 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
     }
 }
 
+@Composable
+fun ReviveSection() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp) // Ajustamos el padding vertical
+    ) {
+        Text(
+            text = "Revive Activado",
+            style = MaterialTheme.typography.headlineSmall.copy(color = Color.Red)
+        )
+        ReviveRecommendation(
+            recommendation = "Elimina todos los tallos y hojas marchitas."
+        )
+        ReviveRecommendation(
+            recommendation = "Retira, con sumo cuidado, la parte superficial del sustrato."
+        )
+        ReviveRecommendation(
+            recommendation = "Saca el cepellón de la planta y ponlo en agua tibia 10 minutos."
+        )
+        ReviveRecommendation(
+            recommendation = "Sécalo un poco y ponlo en tierra nueva."
+        )
+        ReviveRecommendation(
+            recommendation = "Coloca la planta en un sitio iluminado."
+        )
+    }
+
+    Spacer(modifier = Modifier.height(14.dp))
+
+    HorizontalDivider(
+        modifier = Modifier.padding(horizontal = 16.dp),
+        thickness = 0.7.dp,
+        color = Color.Gray
+    )
+}
+
+@Composable
+fun ReviveRecommendation(recommendation: String) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp), // Ajustamos el padding vertical
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFFFE5E5),
+        ),
+        border = BorderStroke(1.dp, Color.Red)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(2.dp)
+        ) {
+            Spacer(modifier = Modifier.width(6.dp))
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = "Warning",
+                tint = Color.Red,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = recommendation,
+                color = Color.Black,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f) // Asigna un weight al texto
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(onClick = { /* Lógica para cerrar la recomendación */ }) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Close",
+                    tint = Color.Black
+                )
+            }
+        }
+    }
+}

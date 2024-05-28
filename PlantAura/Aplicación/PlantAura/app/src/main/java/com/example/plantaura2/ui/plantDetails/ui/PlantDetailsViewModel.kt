@@ -52,6 +52,12 @@ class PlantDetailsViewModel(
     private val _plantTypeRanges = MutableStateFlow<PlantTypeRanges?>(null)
     val plantTypeRanges: StateFlow<PlantTypeRanges?> = _plantTypeRanges
 
+    private val _revive = MutableStateFlow(false)
+    val revive: StateFlow<Boolean> = _revive
+
+    private val _plantId = MutableStateFlow<String?>(null)
+    val plantId: StateFlow<String?> = _plantId
+
     init {
         fetchPlantDetails()
     }
@@ -72,6 +78,7 @@ class PlantDetailsViewModel(
                     Log.d("PlantDetailsViewModel", "Plant found: $plant")
                     _plantName.value = plant.name
                     _plantType.value = plant.plantType
+                    _plantId.value = plant.id  // Set plantId here
                     fetchMeasurementData(plant.id)
                     fetchPlantTypeRanges(plant.plantType)
                 } else {
@@ -79,6 +86,22 @@ class PlantDetailsViewModel(
                 }
             } catch (e: Exception) {
                 Log.e("PlantDetailsViewModel", "Error fetching plant details: ${e.message}", e)
+            }
+        }
+    }
+
+    fun toggleRevive(plantId: String, currentReviveState: Boolean) {
+        viewModelScope.launch {
+            try {
+                val newReviveState = !currentReviveState
+                FirebaseFirestore.getInstance()
+                    .collection("Plantas")
+                    .document(plantId)
+                    .update("revive", newReviveState)
+                    .await()
+                _revive.value = newReviveState
+            } catch (e: Exception) {
+                Log.e("PlantDetailsViewModel", "Error toggling revive: ${e.message}", e)
             }
         }
     }
@@ -92,7 +115,6 @@ class PlantDetailsViewModel(
                 _measurementData.value = data
 
                 if (data.isNotEmpty()) {
-                    // Asumiendo que data está ordenado de más antiguo a más reciente
                     val reversedData = data.asReversed()
                     Log.d("PlantDetailsViewModel", "Reversed measurement data: $reversedData")
                     _lastHumidityAmbiente.value = reversedData.last().humedadAmbiente
@@ -137,6 +159,8 @@ class PlantDetailsViewModel(
     }
 }
 
+
+
 class PlantDetailsViewModelFactory(
     private val plantNameInput: String,
     private val graphUseCase: GraphUseCase,
@@ -156,3 +180,4 @@ class PlantDetailsViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+
