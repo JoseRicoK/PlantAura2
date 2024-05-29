@@ -1,14 +1,22 @@
 package com.example.plantaura2
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import com.example.plantaura2.domain.usecase.AuthUseCase
+import com.example.plantaura2.domain.usecase.GetPlantIdByNameUseCase
 import com.example.plantaura2.domain.usecase.GetPlantNamesUseCase
 import com.example.plantaura2.domain.usecase.SignInUseCase
 import com.example.plantaura2.domain.usecase.SignUpUseCase
@@ -27,13 +35,6 @@ import com.example.plantaura2.ui.signup.ui.SignUpViewModelFactory
 import com.example.plantaura2.ui.theme.PlantAura2Theme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.annotation.RequiresApi
-import androidx.core.content.ContextCompat
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 
 class MainActivity : ComponentActivity() {
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<Array<String>>
@@ -58,9 +59,10 @@ class MainActivity : ComponentActivity() {
         val signInUseCase = SignInUseCase(FirebaseAuth.getInstance())
         val signUpUseCase = SignUpUseCase(FirebaseAuth.getInstance())
         val getPlantNamesUseCase = GetPlantNamesUseCase(FirebaseFirestore.getInstance())
+        val getPlantIdByNameUseCase = GetPlantIdByNameUseCase(FirebaseFirestore.getInstance())
 
         val loginViewModelFactory = LoginViewModelFactory(authUseCase)
-        val homeViewModelFactory = HomeViewModelFactory(getPlantNamesUseCase)
+        val homeViewModelFactory = HomeViewModelFactory(getPlantNamesUseCase, getPlantIdByNameUseCase)
         val signUpViewModelFactory = SignUpViewModelFactory(signUpUseCase)
         val sensorConnectionViewModelFactory = SensorConnectionViewModelFactory(this.application)
 

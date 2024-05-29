@@ -5,29 +5,55 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.example.plantaura2.domain.usecase.GetPlantIdByNameUseCase
 import com.example.plantaura2.domain.usecase.GetPlantNamesUseCase
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
-class HomeViewModel(private val getPlantNamesUseCase: GetPlantNamesUseCase) : ViewModel() {
-    private val _plantNames = MutableStateFlow<List<String>>(emptyList())
-    val plantNames: StateFlow<List<String>> = _plantNames
+data class Plant(
+    val name: String,
+    val revive: Boolean
+)
+
+class HomeViewModel(
+    private val getPlantNamesUseCase: GetPlantNamesUseCase,
+    private val getPlantIdByNameUseCase: GetPlantIdByNameUseCase
+) : ViewModel() {
+    private val _plantNames = MutableStateFlow<List<Plant>>(emptyList())
+    val plantNames: StateFlow<List<Plant>> = _plantNames
 
     init {
         loadPlantNames()
     }
 
-    private fun loadPlantNames() {
+    fun loadPlantNames() {
         viewModelScope.launch {
             val result = getPlantNamesUseCase.getPlantNames()
             result.onSuccess { plantNamesList ->
-                _plantNames.value = plantNamesList
-                Log.d("HomeViewModel", "Nombres de plantas cargados: $plantNamesList")
+                val plants = plantNamesList.map { plantName ->
+                    val plantId = getPlantIdByNameUseCase.getPlantIdByName(plantName)
+                    val revive = plantId?.let { getReviveState(it) } ?: false
+                    Plant(name = plantName, revive = revive)
+                }
+                _plantNames.value = plants
+                Log.d("HomeViewModel", "Nombres de plantas cargados: $plants")
             }.onFailure { exception ->
                 Log.e("HomeViewModel", "Error loading plant names", exception)
             }
         }
+    }
+
+    private suspend fun getReviveState(plantId: String): Boolean {
+        val documentSnapshot = FirebaseFirestore.getInstance()
+            .collection("Plantas")
+            .document(plantId)
+            .get()
+            .await()
+
+        return documentSnapshot.getBoolean("revive") ?: false
     }
 
     fun onPlusSelected(navController: NavController) {
@@ -51,12 +77,14 @@ class HomeViewModel(private val getPlantNamesUseCase: GetPlantNamesUseCase) : Vi
     }
 }
 
-class HomeViewModelFactory(private val getPlantNamesUseCase: GetPlantNamesUseCase) :
-    ViewModelProvider.Factory {
+class HomeViewModelFactory(
+    private val getPlantNamesUseCase: GetPlantNamesUseCase,
+    private val getPlantIdByNameUseCase: GetPlantIdByNameUseCase
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HomeViewModel(getPlantNamesUseCase) as T
+            return HomeViewModel(getPlantNamesUseCase, getPlantIdByNameUseCase) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

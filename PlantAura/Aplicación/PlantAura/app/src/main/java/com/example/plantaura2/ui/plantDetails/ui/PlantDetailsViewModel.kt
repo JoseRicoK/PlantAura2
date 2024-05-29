@@ -171,12 +171,25 @@ class PlantDetailsViewModel(
                     .document(plantId)
                     .update("revive", newReviveState)
                     .await()
+
                 _revive.value = newReviveState
+
+                if (!newReviveState) {
+                    // Si se desactiva el modo revive, limpiar las recomendaciones ocultas
+                    _hiddenRecommendations.value = emptySet()
+                    FirebaseFirestore.getInstance()
+                        .collection("Plantas")
+                        .document(plantId)
+                        .update("hiddenRecommendations", emptyList<Int>())
+                        .await()
+                }
             } catch (e: Exception) {
                 Log.e("PlantDetailsViewModel", "Error toggling revive: ${e.message}", e)
             }
         }
     }
+
+
 
     private fun fetchMeasurementData(plantId: String) {
         viewModelScope.launch {

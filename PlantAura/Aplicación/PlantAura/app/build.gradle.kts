@@ -87,6 +87,7 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services")
+    implementation("com.google.firebase:firebase-storage:21.0.0")
 
     // OkHttp dependencies
     implementation("com.squareup.okhttp3:okhttp:4.9.3")

@@ -147,7 +147,10 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                             }
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = if (revive) Color.Red else Color.Green)
+                    colors = ButtonDefaults.buttonColors(containerColor = if (revive) Color.Red else Color(
+                        0xFF59B924
+                    )
+                    )
                 ) {
                     Text(text = if (revive) "Desactivar Revive" else "Activar Revive")
                 }
@@ -188,7 +191,7 @@ fun PlantTypeDetails(
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -196,7 +199,7 @@ fun PlantTypeDetails(
             color = Color.Gray
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         val revive by viewModel.revive.collectAsState()
 
