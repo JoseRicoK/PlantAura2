@@ -79,6 +79,7 @@ dependencies {
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     implementation("com.github.jaikeerthick:Composable-Graphs:v1.2.3")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation("androidx.activity:activity-ktx:1.9.0")
 
 
     // Firebase dependencies

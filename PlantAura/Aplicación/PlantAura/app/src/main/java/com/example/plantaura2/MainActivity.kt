@@ -1,9 +1,13 @@
 package com.example.plantaura2
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
@@ -37,11 +41,26 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
+    private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<Array<String>>
+    private val sensorConnectionViewModel: SensorConnectionViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Registro del ActivityResultLauncher para la cámara
+        cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val imageBitmap = result.data?.extras?.get("data") as Bitmap
+                val sensorId = sensorConnectionViewModel.currentSensorId // Obtener el ID del sensor descubierto
+                if (sensorId != null) {
+                    sensorConnectionViewModel.saveImage(imageBitmap, sensorId)
+                } else {
+                    Log.e("MainActivity", "Sensor no encontrado")
+                }
+            }
+        }
 
         // Registro del ActivityResultLauncher para permisos
         requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
@@ -62,7 +81,7 @@ class MainActivity : ComponentActivity() {
         val getPlantIdByNameUseCase = GetPlantIdByNameUseCase(FirebaseFirestore.getInstance())
 
         val loginViewModelFactory = LoginViewModelFactory(authUseCase)
-        val homeViewModelFactory = HomeViewModelFactory(getPlantNamesUseCase, getPlantIdByNameUseCase)
+        val homeViewModelFactory = HomeViewModelFactory(getPlantNamesUseCase, getPlantIdByNameUseCase, application)
         val signUpViewModelFactory = SignUpViewModelFactory(signUpUseCase)
         val sensorConnectionViewModelFactory = SensorConnectionViewModelFactory(this.application)
 
@@ -70,7 +89,6 @@ class MainActivity : ComponentActivity() {
         val signUpViewModel: SignUpViewModel by viewModels { signUpViewModelFactory }
         val homeViewModel: HomeViewModel by viewModels { homeViewModelFactory }
         val hubViewModel: QuestionHubViewModel by viewModels()
-        val sensorConnectionViewModel: SensorConnectionViewModel by viewModels { sensorConnectionViewModelFactory }
         val profileViewModel: ProfileViewModel by viewModels()
         val settingsViewModel: SettingsViewModel by viewModels()
 
@@ -91,6 +109,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    fun openCamera() {
+        val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        cameraLauncher.launch(cameraIntent)
+    }
+
     @RequiresApi(Build.VERSION_CODES.S)
     private fun checkAndRequestPermissions() {
         when {
@@ -98,7 +121,7 @@ class MainActivity : ComponentActivity() {
                     ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED -> {
                 // Solicitar los permisos
                 requestPermissionLauncher.launch(
-                    arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+                    arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.CAMERA)
                 )
             }
             // Puedes continuar con operaciones BLE si ya tienes los permisos

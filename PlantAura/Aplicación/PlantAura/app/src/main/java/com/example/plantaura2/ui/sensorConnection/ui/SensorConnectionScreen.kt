@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.plantaura2.MainActivity
 
 @Composable
 fun SensorConnectionScreen(
@@ -69,6 +70,10 @@ fun SensorConnectionScreen(
                         navController.navigate("plantDetails/$sensorId")
                     }
                 }
+            },
+            onTakePhoto = {
+                // Llamar a la función para abrir la cámara
+                (context as MainActivity).openCamera()
             }
         )
     }
@@ -82,6 +87,7 @@ fun SensorConnectionScreen(
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -149,7 +155,7 @@ fun SensorItem(sensor: Sensor, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SensorNameDialog(plantTypes: List<String>, onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
+fun SensorNameDialog(plantTypes: List<String>, onDismiss: () -> Unit, onSave: (String, String) -> Unit, onTakePhoto: () -> Unit) {
     var text by remember { mutableStateOf(TextFieldValue("")) }
     var expanded by remember { mutableStateOf(false) }
     var selectedType by remember { mutableStateOf(plantTypes.firstOrNull() ?: "") }
@@ -212,6 +218,10 @@ fun SensorNameDialog(plantTypes: List<String>, onDismiss: () -> Unit, onSave: (S
                     }) {
                         Text("Guardar")
                     }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = onTakePhoto) {
+                    Text("Tomar Foto")
                 }
             }
         }

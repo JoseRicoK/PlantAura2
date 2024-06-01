@@ -1,7 +1,10 @@
 package com.example.plantaura2.ui.plantDetails.ui
 
+import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +41,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,6 +61,7 @@ import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphColors
 import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphFillType
 import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphStyle
 import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphVisibility
+import java.io.File
 import kotlin.math.roundToInt
 
 @Composable
@@ -76,6 +83,8 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
     val lastLuminosidad by viewModel.lastLuminosidad.collectAsState()
     val revive by viewModel.revive.collectAsState()
     val (showDialog, setShowDialog) = remember { mutableStateOf(false) }
+    val plantId by viewModel.plantId.collectAsState()
+    val imageDirectory = File(LocalContext.current.filesDir, "com.example.plantaura2.data.imagesPlants")
 
     if (showDialog) {
         ReviveInfoDialog(onDismiss = { setShowDialog(false) })
@@ -85,17 +94,49 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = plantName,
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp),
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            ) {
+                if (plantId != null) {
+                    val imagePath = "${imageDirectory.path}/sensor_$plantId.jpg"
+                    val bitmap = BitmapFactory.decodeFile(imagePath)
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Imagen de $plantName",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
 
-            Spacer(modifier = Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color(0xFFFEFAFE)),
+                                startY = 5f,
+                                endY = 500f
+                            )
+                        )
+                )
+                Text(
+                    text = plantName,
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        //.padding(bottom = 8.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(5.dp))
 
             if (plantType.isNotEmpty() && plantTypeRanges != null) {
                 PlantTypeDetails(
@@ -136,11 +177,10 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center // Centrar horizontalmente
             ) {
-                val plantId = viewModel.plantId.collectAsState().value
                 Button(
                     onClick = {
                         if (plantId != null) {
-                            viewModel.toggleRevive(plantId, revive)
+                            viewModel.toggleRevive(plantId!!, revive)
                             if (!revive) {
                                 // Mostrar el diálogo solo si se está activando el modo revive
                                 setShowDialog(true)
@@ -158,6 +198,7 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         }
     }
 }
+
 
 
 
