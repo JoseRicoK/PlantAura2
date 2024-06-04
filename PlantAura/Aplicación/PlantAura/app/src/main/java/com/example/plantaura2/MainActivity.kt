@@ -27,17 +27,22 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModelProvider
 import com.example.plantaura2.domain.usecase.AuthUseCase
 import com.example.plantaura2.domain.usecase.GetPlantIdByNameUseCase
 import com.example.plantaura2.domain.usecase.GetPlantNamesUseCase
 import com.example.plantaura2.domain.usecase.SignInUseCase
 import com.example.plantaura2.domain.usecase.SignUpUseCase
+import com.example.plantaura2.domain.usecase.DeletePlantUseCase
+import com.example.plantaura2.domain.usecase.GetPlantsUseCase
+import com.example.plantaura2.domain.usecase.ChangePasswordUseCase
 import com.example.plantaura2.navigation.AppNavigation
 import com.example.plantaura2.ui.home.ui.HomeViewModel
 import com.example.plantaura2.ui.home.ui.HomeViewModelFactory
 import com.example.plantaura2.ui.login.ui.LoginViewModel
 import com.example.plantaura2.ui.login.ui.LoginViewModelFactory
 import com.example.plantaura2.ui.profile.ui.ProfileViewModel
+import com.example.plantaura2.ui.profile.ui.ProfileViewModelFactory
 import com.example.plantaura2.ui.questionHub.ui.QuestionHubViewModel
 import com.example.plantaura2.ui.sensorConnection.ui.SensorConnectionViewModel
 import com.example.plantaura2.ui.sensorConnection.ui.SensorConnectionViewModelFactory
@@ -97,8 +102,11 @@ class MainActivity : ComponentActivity() {
         val authUseCase = AuthUseCase(FirebaseAuth.getInstance())
         val signInUseCase = SignInUseCase(FirebaseAuth.getInstance())
         val signUpUseCase = SignUpUseCase(FirebaseAuth.getInstance())
+        val changePasswordUseCase = ChangePasswordUseCase(FirebaseAuth.getInstance())
         val getPlantNamesUseCase = GetPlantNamesUseCase(FirebaseFirestore.getInstance())
         val getPlantIdByNameUseCase = GetPlantIdByNameUseCase(FirebaseFirestore.getInstance())
+        val deletePlantUseCase = DeletePlantUseCase(FirebaseFirestore.getInstance())
+        val getPlantsUseCase = GetPlantsUseCase(FirebaseFirestore.getInstance())
 
         val loginViewModelFactory = LoginViewModelFactory(authUseCase)
         val homeViewModelFactory =
@@ -110,7 +118,12 @@ class MainActivity : ComponentActivity() {
         val signUpViewModel: SignUpViewModel by viewModels { signUpViewModelFactory }
         val homeViewModel: HomeViewModel by viewModels { homeViewModelFactory }
         val hubViewModel: QuestionHubViewModel by viewModels()
-        val profileViewModel: ProfileViewModel by viewModels()
+        val sensorConnectionViewModel: SensorConnectionViewModel by viewModels { sensorConnectionViewModelFactory }
+        val profileViewModel =
+            ViewModelProvider(
+                this,
+                ProfileViewModelFactory(deletePlantUseCase, getPlantsUseCase, changePasswordUseCase)
+            )[ProfileViewModel::class.java]
         val settingsViewModel: SettingsViewModel by viewModels()
 
         setContent {
