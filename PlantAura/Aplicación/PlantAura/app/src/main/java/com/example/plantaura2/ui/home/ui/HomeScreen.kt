@@ -1,5 +1,8 @@
 package com.example.plantaura2.ui.home.ui
 
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,10 +10,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,12 +39,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
+import java.io.File
 
 @Composable
 fun HomeScreen(
@@ -64,7 +72,8 @@ fun HomeScreen(
             modifier = Modifier.weight(1f),
             plantNames = plantNames,
             navController = navController,
-            viewModel = viewModel
+            viewModel = viewModel,
+            imageDirectory = viewModel.imageDirectory
         )
         BottomNavigationBar(
             onSettingsClick = { viewModel.onSettingsClick(navController) },
@@ -74,31 +83,30 @@ fun HomeScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar(navController: NavController, onPlusSelected: () -> Unit = {}) {
-    TopAppBar(
-        title = { Text("Plantas") },
-        actions = {
-            IconButton(onClick = onPlusSelected ) {
-                Icon(Icons.Filled.Add, contentDescription = "Añadir planta")
-            }
-        }
-    )
-}
-
-@Composable
-fun BodyContent(modifier: Modifier = Modifier, plantNames: List<Plant>, navController: NavController, viewModel: HomeViewModel) {
+fun BodyContent(
+    modifier: Modifier = Modifier,
+    plantNames: List<Plant>,
+    navController: NavController,
+    viewModel: HomeViewModel,
+    imageDirectory: File
+) {
     Column(modifier = modifier) {
-        PlantList(modifier, plantNames, navController, viewModel)
+        PlantList(modifier, plantNames, navController, viewModel, imageDirectory)
     }
 }
 
 @Composable
-fun PlantList(modifier: Modifier = Modifier, plantNames: List<Plant>, navController: NavController, viewModel: HomeViewModel) {
+fun PlantList(
+    modifier: Modifier = Modifier,
+    plantNames: List<Plant>,
+    navController: NavController,
+    viewModel: HomeViewModel,
+    imageDirectory: File
+) {
     LazyColumn(modifier = modifier.padding(16.dp)) {
         items(plantNames.size) { index ->
-            PlantItem(plantNames[index]) {
+            PlantItem(plantNames[index], imageDirectory) {
                 viewModel.onPlantSelected(navController, plantNames[index].name)
             }
         }
@@ -106,7 +114,7 @@ fun PlantList(modifier: Modifier = Modifier, plantNames: List<Plant>, navControl
 }
 
 @Composable
-fun PlantItem(planta: Plant, onClick: () -> Unit) {
+fun PlantItem(planta: Plant, imageDirectory: File, onClick: () -> Unit) {
     val borderColor = if (planta.revive) Color.Red else Color.Transparent
 
     Card(
@@ -119,29 +127,84 @@ fun PlantItem(planta: Plant, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp) // Establecer una altura fija para el Row
+                .background(Color(0xFFF5F5F5)) // Color de fondo blanco roto
         ) {
-            Icon(
-                Icons.Filled.Spa,
-                contentDescription = "Planta",
-                modifier = Modifier.size(40.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .width(100.dp) // Establecer un ancho fijo para la imagen
+                    .fillMaxHeight()
+            ) {
+                if (planta.hasImage) {
+                    // Mostrar imagen de la planta
+                    val imagePath = "${imageDirectory.path}/sensor_${planta.id}.jpg"
+                    val bitmap = BitmapFactory.decodeFile(imagePath)
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Imagen de ${planta.name}",
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(100.dp), // Asegurar que la imagen tenga un ancho fijo
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // Mostrar icono predeterminado
+                    Icon(
+                        imageVector = Icons.Filled.Spa,
+                        contentDescription = "Planta",
+                        modifier = Modifier
+                            //.size(60.dp) // Ajustar el tamaño del icono
+                            .align(Alignment.Center)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(Color.Transparent, Color(0xFFF5F5F5)), // Degradado de transparente a blanco roto
+                                startX = 100f,
+                                endX = 280f // Ajustar para mover el final del gradiente
+                            )
+                        )
+                )
+            }
             Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = planta.name,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f)
-            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp)
+                    .align(Alignment.CenterVertically)
+            ) {
+                Text(
+                    text = planta.name,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            }
             Icon(
-                Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Detalles",
-                modifier = Modifier.size(24.dp)
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward, // Flecha indicando que se puede pulsar
+                contentDescription = "Flecha indicando que se puede pulsar",
+                modifier = Modifier
+                    //.size(24.dp)
+                    .align(Alignment.CenterVertically)
+                    .padding(end = 16.dp)
             )
         }
     }
 }
+
+
+
+
+
+
+
+
+
 
 @Composable
 fun BottomNavigationBar(
@@ -182,4 +245,18 @@ fun BottomNavigationBar(
             }
         }
     }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TopBar(navController: NavController, onPlusSelected: () -> Unit = {}) {
+    TopAppBar(
+        title = { Text("Plantas") },
+        actions = {
+            IconButton(onClick = onPlusSelected ) {
+                Icon(Icons.Filled.Add, contentDescription = "Añadir planta")
+            }
+        }
+    )
 }

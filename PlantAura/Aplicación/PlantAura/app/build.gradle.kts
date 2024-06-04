@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.Packaging
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -46,22 +48,27 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE"
+            excludes += "META-INF/LICENSE.txt"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/NOTICE.txt"
         }
     }
 }
 
 dependencies {
-    val lifecycleVersion = "2.8.0"
+    val lifecycleVersion = "2.8.1"
 
     // Core dependencies
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycleVersion")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.8.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.8.1")
     implementation("androidx.compose.runtime:runtime-livedata:1.6.7")
 
     // Compose dependencies
@@ -79,11 +86,12 @@ dependencies {
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     implementation("com.github.jaikeerthick:Composable-Graphs:v1.2.3")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation("androidx.activity:activity-ktx:1.9.0")
 
 
     // Firebase dependencies
     implementation("com.google.firebase:firebase-auth-ktx:23.0.0")
-    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services")
@@ -102,4 +110,21 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+
+    //WorkManager para notificaciones
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    //TensorFlow Lite
+    implementation("org.tensorflow:tensorflow-lite:2.13.0")
+    implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.10.0")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.16.1")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+
+    implementation("org.scijava:native-lib-loader:2.3.5")
+
+    implementation("org.apache.commons:commons-math3:3.6.1")
+
+    //Google Cloud
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.0.0")
+    implementation("com.google.code.gson:gson:2.10.1")
 }

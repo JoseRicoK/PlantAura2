@@ -1,9 +1,18 @@
 package com.example.plantaura2
 
 import android.Manifest
+import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
@@ -14,6 +23,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.example.plantaura2.domain.usecase.AuthUseCase
@@ -42,19 +54,46 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
+    private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<Array<String>>
+    private val sensorConnectionViewModel: SensorConnectionViewModel by viewModels()
+
+    companion object {
+        const val MY_CHANEL_ID = "myChannel"
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Registro del ActivityResultLauncher para permisos
-        requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-            val granted = permissions.entries.all { it.value }
-            if (!granted) {
-                // Algunos permisos no han sido concedidos. Aquí puedes manejar este caso.
+
+        createNotificationChannel()
+
+
+        // Registro del ActivityResultLauncher para la cámara
+        cameraLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    val imageBitmap = result.data?.extras?.get("data") as Bitmap
+                    val sensorId =
+                        sensorConnectionViewModel.currentSensorId // Obtener el ID del sensor descubierto
+                    if (sensorId != null) {
+                        sensorConnectionViewModel.saveImage(imageBitmap, sensorId)
+                    } else {
+                        Log.e("MainActivity", "Sensor no encontrado")
+                    }
+                }
             }
-        }
+
+        // Registro del ActivityResultLauncher para permisos
+        requestPermissionLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+                val granted = permissions.entries.all { it.value }
+                if (!granted) {
+                    // Algunos permisos no han sido concedidos. Aquí puedes manejar este caso.
+                }
+            }
 
         // Solicitar permisos BLE necesarios
         checkAndRequestPermissions()
@@ -70,7 +109,8 @@ class MainActivity : ComponentActivity() {
         val getPlantsUseCase = GetPlantsUseCase(FirebaseFirestore.getInstance())
 
         val loginViewModelFactory = LoginViewModelFactory(authUseCase)
-        val homeViewModelFactory = HomeViewModelFactory(getPlantNamesUseCase, getPlantIdByNameUseCase)
+        val homeViewModelFactory =
+            HomeViewModelFactory(getPlantNamesUseCase, getPlantIdByNameUseCase, application)
         val signUpViewModelFactory = SignUpViewModelFactory(signUpUseCase)
         val sensorConnectionViewModelFactory = SensorConnectionViewModelFactory(this.application)
 
@@ -88,7 +128,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             PlantAura2Theme {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
                     AppNavigation(
                         loginViewModel,
                         signUpViewModel,
@@ -105,15 +148,112 @@ class MainActivity : ComponentActivity() {
 
     @RequiresApi(Build.VERSION_CODES.S)
     private fun checkAndRequestPermissions() {
-        when {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED -> {
-                // Solicitar los permisos
-                requestPermissionLauncher.launch(
-                    arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_SCAN
+            ) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.CAMERA
                 )
-            }
-            // Puedes continuar con operaciones BLE si ya tienes los permisos
+            )
+        }
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissionLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
         }
     }
+
+
+    //JOSE LO CAMBIE A PUBLIC - PRIVATE DABA ERRORES Y NO  QUERIA MODIFICAR LAS OTRAS CLASS.
+    public fun openCamera() {
+        val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        cameraLauncher.launch(cameraIntent)
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "Nombre del canal"
+            val descriptionText = "Descripción del canal"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel("default", name, importance).apply {
+                description = descriptionText
+            }
+
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+
+
+    fun createSimpleNotification(context: Context) {
+        val channelId = "MY_CHANNEL_ID"
+        val notificationId = 1
+
+        // Crear el canal de notificación para Android O y versiones superiores
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "Notification Channel"
+            val descriptionText = "This is a notification channel"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(channelId, name, importance).apply {
+                description = descriptionText
+            }
+            // Registrar el canal en el sistema
+            val notificationManager: NotificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val intent = Intent(context, MainActivity::class.java)
+
+
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        // Construir la notificación
+        val builder = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.plantaura_logo_fondo_removebg)
+            .setContentTitle("PlantAura")
+            .setContentText("Notificaciones de nuestras gráficas de viaje")
+            .setStyle(NotificationCompat.BigTextStyle().bigText("Notificaciones de nuestras gráficas de viaje. Haz clic para ver más detalles."))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+
+        // Comprobar el permiso y mostrar la notificación
+        with(NotificationManagerCompat.from(context)) {
+            if (ActivityCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                notify(notificationId, builder.build())
+            } else {
+                // Solicitar permiso si no está concedido
+                ActivityCompat.requestPermissions(
+                    (context as Activity),
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    notificationId
+                )
+            }
+        }
+    }
+
+
 }
+

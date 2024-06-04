@@ -2,6 +2,7 @@ package com.example.plantaura2.ui.sensorConnection.ui
 
 import android.app.Application
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
@@ -22,6 +23,8 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.net.InetAddress
 import javax.jmdns.JmDNS
@@ -41,9 +44,57 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
     private val _plantTypes = MutableStateFlow<List<String>>(emptyList())
     val plantTypes: StateFlow<List<String>> = _plantTypes
 
+    var currentSensorId: String? = null
+
     init {
         fetchPlantTypes()
     }
+
+    fun saveImage(imageBitmap: Bitmap, sensorId: String) {
+        val sensor = _sensors.value.find { it.id == sensorId }
+        if (sensor == null) {
+            Log.e("saveImage", "Sensor with ID $sensorId not found")
+            return
+        }
+
+        val storageDir = File(getApplication<Application>().filesDir, "com.example.plantaura2.data.imagesPlants")
+        Log.d("saveImage", "Storage directory: ${storageDir.absolutePath}")
+
+        if (!storageDir.exists()) {
+            val dirCreated = storageDir.mkdir()
+            Log.d("saveImage", "Storage directory created: $dirCreated")
+        } else {
+            Log.d("saveImage", "Storage directory already exists")
+        }
+
+        val imageFile = File(storageDir, "sensor_${sensor.id}.jpg")
+        Log.d("saveImage", "Image file path: ${imageFile.absolutePath}")
+
+        try {
+            val fos = FileOutputStream(imageFile)
+            Log.d("saveImage", "FileOutputStream created")
+
+            val compressed = imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+            Log.d("saveImage", "Image compressed: $compressed")
+
+            fos.close()
+            Log.d("saveImage", "FileOutputStream closed")
+
+            // Listar archivos en el directorio
+            val files = storageDir.listFiles()
+            if (files != null) {
+                for (file in files) {
+                    Log.d("saveImage", "File in directory: ${file.name}")
+                }
+            } else {
+                Log.d("saveImage", "No files found in directory")
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            Log.e("saveImage", "IOException: ${e.message}")
+        }
+    }
+
 
     // Verifica si el dispositivo está conectado a WiFi
     private fun isConnectedToWiFi(context: Context): Boolean {
@@ -139,6 +190,9 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
                     if (sensorData != null) {
                         val sensor = Sensor(sensorData.id, ipAddress, sensorData.humedad)
                         _sensors.value = _sensors.value + sensor
+
+                        currentSensorId = sensor.id
+                        Log.d("SensorConnectionViewModel", "Current Sensor ID: $currentSensorId")
                     }
                 } else {
                     Log.e("SensorConnectionViewModel", "Error en la respuesta: ${response.code()}")
@@ -166,7 +220,15 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
         val sensorData = hashMapOf(
             "id" to sensorId,
             "name" to name,
-            "plantType" to plantType
+            "plantType" to plantType,
+            "revive" to false,
+            "recommendations" to listOf(
+                "Elimina todos los tallos y hojas marchitas.",
+                "Retira, con sumo cuidado, la parte superficial del sustrato.",
+                "Saca el cepellón de la planta y ponlo en agua tibia 10 minutos.",
+                "Sécalo un poco y ponlo en tierra nueva.",
+                "Coloca la planta en un sitio iluminado."
+            )
             // Agrega otros campos que desees guardar
         )
 
