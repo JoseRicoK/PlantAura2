@@ -18,12 +18,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.plantaura2.domain.model.Plant
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(viewModel: ProfileViewModel, navController: NavController) {
     val plants by viewModel.plants.collectAsState()
     var newPassword by remember { mutableStateOf("") }
     val passwordChangeMessage: String? by viewModel.passwordChangeMessage.observeAsState()
+
+    // Estado del Snackbar
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -38,6 +43,12 @@ fun ProfileScreen(viewModel: ProfileViewModel, navController: NavController) {
         )
         PlantList(plants = plants, onDeletePlant = { plantId ->
             viewModel.onDeletePlantSelected(plantId)
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(
+                    message = "Planta eliminada",
+                    duration = SnackbarDuration.Short
+                )
+            }
         })
         Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider()  // Línea divisoria
@@ -57,6 +68,17 @@ fun ProfileScreen(viewModel: ProfileViewModel, navController: NavController) {
             Spacer(modifier = Modifier.padding(16.dp))
         }
     }
+
+    // Colocamos el SnackbarHost en la raíz del Composable
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+
     BottomNavigationBar(
         onSettingsClick = { viewModel.onSettingsClick(navController) },
         onHomeClick = { viewModel.onHomeClick(navController) },
