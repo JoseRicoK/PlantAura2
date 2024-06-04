@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.example.plantaura2.domain.usecase.AuthUseCase
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
 
@@ -24,6 +25,12 @@ class LoginViewModel(private val authUseCase: AuthUseCase) : ViewModel() {
 
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
+
+    private val _errorMessage = MutableLiveData<String?>()
+    val errorMessage: LiveData<String?> = _errorMessage
+
+    private val _resetPasswordMessage = MutableLiveData<String?>()
+    val resetPasswordMessage: LiveData<String?> = _resetPasswordMessage
 
     fun onLoginChanged(email: String, password: String) {
         _email.value = email
@@ -46,6 +53,7 @@ class LoginViewModel(private val authUseCase: AuthUseCase) : ViewModel() {
 
             }.onFailure { exception ->
                 Log.d("MascotaFeliz", "signInWithEmail: ${exception.message}")
+                _errorMessage.value = "Error: ${exception.message}"
             }
         }
     }
@@ -54,9 +62,6 @@ class LoginViewModel(private val authUseCase: AuthUseCase) : ViewModel() {
         navigateToSignUp(navController)
     }
 
-
-
-
     fun navigateToHome(navController: NavController) {
         navController.navigate("home")
     }
@@ -64,8 +69,22 @@ class LoginViewModel(private val authUseCase: AuthUseCase) : ViewModel() {
     fun navigateToSignUp(navController: NavController) {
         navController.navigate("signUp")
     }
+    fun onForgotPasswordSelected() {
+        val email = _email.value
+        if (email.isNullOrEmpty()) {
+            _resetPasswordMessage.value = "Please enter your email address"
+            return
+        }
+        FirebaseAuth.getInstance().sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _resetPasswordMessage.value = "Password reset email sent"
+                } else {
+                    _resetPasswordMessage.value = "Error: ${task.exception?.message}"
+                }
+            }
+    }
 }
-
 
 class LoginViewModelFactory(private val authUseCase: AuthUseCase) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
