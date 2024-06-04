@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -53,6 +52,7 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController) {
     ) {
         Login(Modifier.align(Alignment.Center), viewModel, navController)
     }
+
 }
 
 /**
@@ -62,14 +62,13 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController) {
  */
 @Composable
 fun Login(modifier: Modifier, viewModel: LoginViewModel, navController: NavController) {
+
     val email: String by viewModel.email.observeAsState(initial = "")
     val password: String by viewModel.password.observeAsState(initial = "")
     val loginEnable: Boolean by viewModel.loginEnable.observeAsState(initial = false)
-    val isLoading: Boolean by viewModel.isLoading.observeAsState(initial = false)
-    val errorMessage: String? by viewModel.errorMessage.observeAsState()
-    val resetPasswordMessage: String? by viewModel.resetPasswordMessage.observeAsState()
 
-    val coroutineScope = rememberCoroutineScope()
+    val isLoading: Boolean by viewModel.isLoading.observeAsState(initial = false)
+    val corrutineScope = rememberCoroutineScope()
     if (isLoading) {
         Box(Modifier.fillMaxSize()) {
             CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -82,37 +81,19 @@ fun Login(modifier: Modifier, viewModel: LoginViewModel, navController: NavContr
             Spacer(modifier = Modifier.padding(4.dp))
             PasswordField(password) { viewModel.onLoginChanged(email, it) }
             Spacer(modifier = Modifier.padding(8.dp))
-            ForgotPasswordText(
-                modifier = Modifier.align(Alignment.End),
-                onForgotPasswordSelected = { viewModel.onForgotPasswordSelected() }
-            )
+            ForgontPasswordText(Modifier.align(Alignment.End))
             Spacer(modifier = Modifier.padding(8.dp))
-            errorMessage?.let {
-                Text(
-                    text = it,
-                    color = Color.Red,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-                Spacer(modifier = Modifier.padding(8.dp))
-            }
-            resetPasswordMessage?.let {
-                Text(
-                    text = it,
-                    color = Color.Blue,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-                Spacer(modifier = Modifier.padding(8.dp))
-            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 LoginButton(loginEnable) {
-                    coroutineScope.launch {
+                    corrutineScope.launch {
                         viewModel.onLoginSelected(email, password, navController)
                     }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
+                // Añade aquí el botón de Sign Up
                 SignUpButton(
                     onSignUpSelected = { viewModel.onSignUpSelected(navController) },
                     navController = navController
@@ -121,7 +102,6 @@ fun Login(modifier: Modifier, viewModel: LoginViewModel, navController: NavContr
         }
     }
 }
-
 
 /**
  * Botón de registro
@@ -185,10 +165,10 @@ fun LoginButton(loginEnable: Boolean, onLoginSelected: () -> Unit) {
  * @param modifier Modificador para aplicar al texto
  */
 @Composable
-fun ForgotPasswordText(modifier: Modifier, onForgotPasswordSelected: () -> Unit) {
+fun ForgontPasswordText(modifier: Modifier) {
     Text(
         text = "Forgot Password?",
-        modifier = modifier.clickable { onForgotPasswordSelected() },
+        modifier = modifier.clickable { },
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
         color = PurpleGrey80
@@ -209,7 +189,6 @@ fun PasswordField(password: String, onTextFieldChanged: (String) -> Unit) {
         placeholder = { Text(text = "Password") },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        visualTransformation = PasswordVisualTransformation(),
         maxLines = 1,
     )
 }
