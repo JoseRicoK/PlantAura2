@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,22 +22,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -63,6 +50,9 @@ import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphStyle
 import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphVisibility
 import java.io.File
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
 fun PlantDetailsScreen(navController: NavController, plantName: String) {
@@ -198,13 +188,6 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         }
     }
 }
-
-
-
-
-
-
-
 
 
 @Composable
@@ -491,12 +474,14 @@ fun MeasurementSection(
 
 
 @Composable
-fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
+fun MeasurementGraph( data: List<Pair<String, Int>>, title: String ) {
+    // Formatear las fechas para mostrar solo la hora
+    val dateFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
     val reversedData = data.asReversed()
     val xAxisData = reversedData.mapIndexed { index, dataPoint ->
+        val date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).parse(dataPoint.first)
         when (index) {
-            0 -> dataPoint.first
-            reversedData.size - 1 -> dataPoint.first
+            0, reversedData.size - 1 -> dateFormat.format(date)
             else -> ""
         }
     }
@@ -504,9 +489,9 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
 
     val darkGreen = Color(0xFF006400) // Definimos un color verde oscuro
 
-    // Obtener los valores mínimo y máximo de Y
     val minY = yAxisData.minOrNull() ?: 0f
     val maxY = yAxisData.maxOrNull() ?: 100f
+
 
     // Crear etiquetas personalizadas para el eje Y
     val yAxisLabels = (0..10).map { (minY + it * (maxY - minY) / 10).roundToInt().toString() }
@@ -530,6 +515,8 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
     )
 
     val clickedPoint = remember { mutableStateOf<LineData?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
@@ -542,11 +529,31 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
             style = style,
             onPointClick = { point ->
                 clickedPoint.value = point
-                Log.d("MeasurementGraph", "Punto clicado: ${point.x}, ${point.y}")
+
+                coroutineScope.launch {
+                    val result = snackbarHostState.showSnackbar(
+                        message = "Valor: ${point.y}",
+                        duration = SnackbarDuration.Short
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> {
+                            // Handle dismissed state if needed
+                        }
+                        SnackbarResult.ActionPerformed -> {
+                            // Handle action performed state if needed
+                        }
+                    }
+                }
             }
+        )
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
+
 
 @Composable
 fun ReviveSection(viewModel: PlantDetailsViewModel) {
