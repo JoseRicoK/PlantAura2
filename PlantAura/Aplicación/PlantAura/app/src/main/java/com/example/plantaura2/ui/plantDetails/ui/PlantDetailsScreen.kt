@@ -21,22 +21,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -63,6 +49,7 @@ import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphStyle
 import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphVisibility
 import java.io.File
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 @Composable
 fun PlantDetailsScreen(navController: NavController, plantName: String) {
@@ -198,13 +185,6 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         }
     }
 }
-
-
-
-
-
-
-
 
 
 @Composable
@@ -530,6 +510,8 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
     )
 
     val clickedPoint = remember { mutableStateOf<LineData?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
@@ -542,11 +524,31 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
             style = style,
             onPointClick = { point ->
                 clickedPoint.value = point
-                Log.d("MeasurementGraph", "Punto clicado: ${point.x}, ${point.y}")
+                Log.d("MeasurementGraph", "Valor: ${point.y}")
+
+                coroutineScope.launch {
+                    val result = snackbarHostState.showSnackbar(
+                        message = "Valor: ${point.y}",
+                        duration = SnackbarDuration.Short
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> {
+                            // Handle dismissed state if needed
+                        }
+                        SnackbarResult.ActionPerformed -> {
+                            // Handle action performed state if needed
+                        }
+                    }
+                }
             }
+        )
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
+
 
 @Composable
 fun ReviveSection(viewModel: PlantDetailsViewModel) {
