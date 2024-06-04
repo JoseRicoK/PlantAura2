@@ -1,10 +1,22 @@
 package com.example.plantaura2.ui.plantDetails.ui
 
+
+import android.app.Application
 import android.graphics.BitmapFactory
 import android.util.Log
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,20 +29,42 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -49,16 +83,18 @@ import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphStyle
 import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphVisibility
 import java.io.File
 import kotlin.math.roundToInt
-import kotlinx.coroutines.launch
+
 
 @Composable
 fun PlantDetailsScreen(navController: NavController, plantName: String) {
+    val context = LocalContext.current.applicationContext as Application
     val viewModel: PlantDetailsViewModel = viewModel(
         factory = PlantDetailsViewModelFactory(
             plantName,
             GraphUseCase(FirebaseFirestore.getInstance()),
             GetPlantTypeByNameUseCase(FirebaseFirestore.getInstance()),
-            GetPlantTypeRangesUseCase(FirebaseFirestore.getInstance())
+            GetPlantTypeRangesUseCase(FirebaseFirestore.getInstance()),
+            context
         )
     )
     val plantName by viewModel.plantName.collectAsState()
@@ -119,7 +155,7 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        //.padding(bottom = 8.dp)
+                    //.padding(bottom = 8.dp)
                 )
             }
 
@@ -147,7 +183,11 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            //Spacer(modifier = Modifier.height(16.dp))
+
+            PredictHealthSection(viewModel = viewModel)
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             MeasurementSection(
                 measurementData = viewModel.measurementData.collectAsState().value,
@@ -157,8 +197,9 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                 lastLuminosidad = lastLuminosidad
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Botón "Revive"
-            Spacer(modifier = Modifier.height(10.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -185,6 +226,100 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+@Composable
+fun AnimatedBorderContainer(viewModel: PlantDetailsViewModel) {
+    val saludPredicha by viewModel.saludPredicha.observeAsState(0)
+    val isButtonClicked = remember { mutableStateOf(false) }
+    val infiniteTransition = rememberInfiniteTransition()
+    val animatedProgress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        )
+    )
+
+    val colors = listOf(Color(0xFFAE48F7), Color(0xFFA86AFF), Color(0xFFCCADF0), Color(0xFFAB63DF))
+    val brush = Brush.linearGradient(
+        colors = colors,
+        start = Offset(0f, 0f),
+        end = Offset(animatedProgress * 2000f, animatedProgress * 2000f)
+    )
+
+    Box(
+        modifier = Modifier
+            .padding(16.dp)
+            .background(Color.Transparent)
+            .border(BorderStroke(4.dp, brush), RoundedCornerShape(16.dp))
+            .background(Color(0xFF821ACC), shape = RoundedCornerShape(16.dp))
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(
+                onClick = {
+                    viewModel.predictSalud()
+                    isButtonClicked.value = true
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF821ACC), shape = RoundedCornerShape(16.dp)),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF821ACC)),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                border = BorderStroke(0.dp, Color.Transparent)
+            ) {
+                Text(text = "Predecir Salud", color = Color.White)
+            }
+
+            if (isButtonClicked.value) {
+                Text(
+                    text = "Salud predicha: $saludPredicha",
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PredictHealthSection(viewModel: PlantDetailsViewModel) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        AnimatedBorderContainer(viewModel)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @Composable
@@ -510,8 +645,6 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
     )
 
     val clickedPoint = remember { mutableStateOf<LineData?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
@@ -524,31 +657,11 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
             style = style,
             onPointClick = { point ->
                 clickedPoint.value = point
-                Log.d("MeasurementGraph", "Valor: ${point.y}")
-
-                coroutineScope.launch {
-                    val result = snackbarHostState.showSnackbar(
-                        message = "Valor: ${point.y}",
-                        duration = SnackbarDuration.Short
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> {
-                            // Handle dismissed state if needed
-                        }
-                        SnackbarResult.ActionPerformed -> {
-                            // Handle action performed state if needed
-                        }
-                    }
-                }
+                Log.d("MeasurementGraph", "Punto clicado: ${point.x}, ${point.y}")
             }
-        )
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
-
 
 @Composable
 fun ReviveSection(viewModel: PlantDetailsViewModel) {
@@ -636,4 +749,19 @@ fun ReviveInfoDialog(onDismiss: () -> Unit) {
         }
     )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
