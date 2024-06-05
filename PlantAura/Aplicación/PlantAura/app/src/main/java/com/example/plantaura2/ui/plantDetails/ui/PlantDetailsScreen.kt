@@ -1,15 +1,10 @@
 package com.example.plantaura2.ui.plantDetails.ui
 
-
 import android.app.Application
 import android.graphics.BitmapFactory
-import android.util.Log
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -34,27 +29,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -65,10 +47,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -88,6 +66,9 @@ import com.jaikeerthick.composable_graphs.composables.line.style.LineGraphVisibi
 import java.io.File
 import kotlin.math.roundToInt
 import com.example.plantaura2.R
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 
 @Composable
@@ -113,26 +94,38 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
     val (showDialog, setShowDialog) = remember { mutableStateOf(false) }
     val plantId by viewModel.plantId.collectAsState()
     val imageDirectory = File(LocalContext.current.filesDir, "com.example.plantaura2.data.imagesPlants")
-
     if (showDialog) {
         ReviveInfoDialog(onDismiss = { setShowDialog(false) })
     }
-
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-            ) {
-                if (plantId != null) {
-                    val imagePath = "${imageDirectory.path}/sensor_$plantId.jpg"
-                    val bitmap = BitmapFactory.decodeFile(imagePath)
-                    if (bitmap != null) {
+            if (plantId != null) {
+                val imagePath = "${imageDirectory.path}/sensor_$plantId.jpg"
+                val bitmap = BitmapFactory.decodeFile(imagePath)
+                if (bitmap == null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(90.dp)
+                    ){
+                        Text(
+                            text = plantName,
+                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                            //.padding(bottom = 8.dp)
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    ) {
                         Image(
                             bitmap = bitmap.asImageBitmap(),
                             contentDescription = "Imagen de $plantName",
@@ -141,31 +134,29 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                                 .height(200.dp),
                             contentScale = ContentScale.Crop
                         )
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(Color.Transparent, Color(0xFFFEFAFE)),
+                                        startY = 5f,
+                                        endY = 500f
+                                    )
+                                )
+                        )
+                        Text(
+                            text = plantName,
+                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                            //.padding(bottom = 8.dp)
+                        )
                     }
                 }
-
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color(0xFFFEFAFE)),
-                                startY = 5f,
-                                endY = 500f
-                            )
-                        )
-                )
-                Text(
-                    text = plantName,
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                    //.padding(bottom = 8.dp)
-                )
             }
 
             Spacer(modifier = Modifier.height(5.dp))
-
             if (plantType.isNotEmpty() && plantTypeRanges != null) {
                 PlantTypeDetails(
                     plantType = plantType,
@@ -229,19 +220,6 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @Composable
 fun AnimatedBorderContainer(viewModel: PlantDetailsViewModel) {
@@ -481,24 +459,6 @@ fun PredictHealthSection(viewModel: PlantDetailsViewModel) {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Composable
 fun PlantTypeDetails(
     plantType: String,
@@ -523,25 +483,18 @@ fun PlantTypeDetails(
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
-
         Spacer(modifier = Modifier.height(14.dp))
-
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
             thickness = 0.7.dp,
             color = Color.Gray
         )
-
         Spacer(modifier = Modifier.height(8.dp))
-
         val revive by viewModel.revive.collectAsState()
-
         if (revive) {
             ReviveSection(viewModel = viewModel)
         }
-
         Spacer(modifier = Modifier.height(16.dp))
-
         if (lastHumidityAmbiente != null) {
             ParameterStatusRow(
                 parameterName = "Humedad Ambiente",
@@ -551,7 +504,6 @@ fun PlantTypeDetails(
                 unit = "%"
             )
         }
-
         if (lastHumiditySuelo != null) {
             ParameterStatusRow(
                 parameterName = "Humedad Suelo",
@@ -561,7 +513,6 @@ fun PlantTypeDetails(
                 unit = "%"
             )
         }
-
         if (lastTemperature != null) {
             ParameterStatusRow(
                 parameterName = "Temperatura",
@@ -571,7 +522,6 @@ fun PlantTypeDetails(
                 unit = "ºC"
             )
         }
-
         if (lastLuminosidad != null) {
             ParameterStatusRow(
                 parameterName = "Luminosidad",
@@ -581,9 +531,7 @@ fun PlantTypeDetails(
                 unit = "luxes"
             )
         }
-
         Spacer(modifier = Modifier.height(14.dp))
-
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
             thickness = 0.7.dp,
@@ -591,8 +539,6 @@ fun PlantTypeDetails(
         )
     }
 }
-
-
 @Composable
 fun ParameterStatusRow(
     parameterName: String,
@@ -607,7 +553,6 @@ fun ParameterStatusRow(
     } else {
         "❌" // Emoji for "out of range"
     }
-
     Column {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -632,12 +577,10 @@ fun ParameterStatusRow(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .fillMaxWidth(),
-
                 colors = CardDefaults.cardColors(
                     containerColor = Color(0xFFFFF3E0),
                     ),
                 border = BorderStroke(1.dp, Color(0xFFFFA500)),
-
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -659,8 +602,6 @@ fun ParameterStatusRow(
         }
     }
 }
-
-
 
 @Composable
 fun MeasurementSection(
@@ -695,9 +636,7 @@ fun MeasurementSection(
             }
         }
     }
-
     Spacer(modifier = Modifier.height(16.dp))
-
     // Recuadro para humedad suelo y gráfica
     Card(
         modifier = Modifier
@@ -723,9 +662,7 @@ fun MeasurementSection(
             }
         }
     }
-
     Spacer(modifier = Modifier.height(16.dp))
-
     // Recuadro para temperatura y gráfica
     Card(
         modifier = Modifier
@@ -751,9 +688,7 @@ fun MeasurementSection(
             }
         }
     }
-
     Spacer(modifier = Modifier.height(16.dp))
-
     // Recuadro para luminosidad y gráfica
     Card(
         modifier = Modifier
@@ -781,14 +716,15 @@ fun MeasurementSection(
     }
 }
 
-
 @Composable
-fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
+fun MeasurementGraph(data: List<Pair<String, Int>>, title: String ) {
+    // Formatear las fechas para mostrar solo la hora
+    val dateFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
     val reversedData = data.asReversed()
     val xAxisData = reversedData.mapIndexed { index, dataPoint ->
+        val date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).parse(dataPoint.first)
         when (index) {
-            0 -> dataPoint.first
-            reversedData.size - 1 -> dataPoint.first
+            0, reversedData.size - 1 -> dateFormat.format(date)
             else -> ""
         }
     }
@@ -822,6 +758,8 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
     )
 
     val clickedPoint = remember { mutableStateOf<LineData?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
@@ -834,8 +772,18 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
             style = style,
             onPointClick = { point ->
                 clickedPoint.value = point
-                Log.d("MeasurementGraph", "Punto clicado: ${point.x}, ${point.y}")
+
+                coroutineScope.launch {
+                    val result = snackbarHostState.showSnackbar(
+                        message = "Valor: ${point.y}",
+                        duration = SnackbarDuration.Short
+                    )
+                }
             }
+        )
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
@@ -843,7 +791,6 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
 @Composable
 fun ReviveSection(viewModel: PlantDetailsViewModel) {
     val filteredRecommendations by viewModel.filteredRecommendations.collectAsState()
-
     Column {
         filteredRecommendations.forEachIndexed { index, recommendation ->
             ReviveRecommendation(
@@ -854,16 +801,13 @@ fun ReviveSection(viewModel: PlantDetailsViewModel) {
             )
         }
     }
-
     Spacer(modifier = Modifier.height(14.dp))
-
     HorizontalDivider(
         modifier = Modifier.padding(horizontal = 16.dp),
         thickness = 0.7.dp,
         color = Color.Gray
     )
 }
-
 @Composable
 fun ReviveRecommendation(recommendation: String, onClose: () -> Unit) {
     Card(
@@ -904,7 +848,6 @@ fun ReviveRecommendation(recommendation: String, onClose: () -> Unit) {
         }
     }
 }
-
 @Composable
 fun ReviveInfoDialog(onDismiss: () -> Unit) {
     AlertDialog(
@@ -926,19 +869,3 @@ fun ReviveInfoDialog(onDismiss: () -> Unit) {
         }
     )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
