@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Spa
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.plantaura2.navigation.Screen
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -76,6 +78,7 @@ fun HomeScreen(
             imageDirectory = viewModel.imageDirectory
         )
         BottomNavigationBar(
+            navController = navController,
             onSettingsClick = { viewModel.onSettingsClick(navController) },
             onHomeClick = { viewModel.onHomeClick(navController) },
             onProfileClick = { viewModel.onProfileClick(navController) }
@@ -208,10 +211,13 @@ fun PlantItem(planta: Plant, imageDirectory: File, onClick: () -> Unit) {
 
 @Composable
 fun BottomNavigationBar(
+    navController: NavController,
     onSettingsClick: () -> Unit,
     onHomeClick: () -> Unit,
     onProfileClick: () -> Unit
 ) {
+    val currentRoute = navController.currentBackStackEntry?.destination?.route
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -234,13 +240,25 @@ fun BottomNavigationBar(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 IconButton(onClick = onSettingsClick) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Ajustes")
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Ajustes",
+                        tint = if (currentRoute == Screen.Settings.route) Color(0xFF821ACC) else Color.Gray
+                    )
                 }
                 IconButton(onClick = onHomeClick) {
-                    Icon(Icons.Filled.Spa, contentDescription = "Plantas")
+                    Icon(
+                        imageVector = Icons.Filled.Spa,
+                        contentDescription = "Plantas",
+                        tint = if (currentRoute == Screen.Home.route) Color(0xFF821ACC) else Color.Gray
+                    )
                 }
                 IconButton(onClick = onProfileClick) {
-                    Icon(Icons.Filled.Person, contentDescription = "Perfil")
+                    Icon(
+                        imageVector = Icons.Filled.Person,
+                        contentDescription = "Perfil",
+                        tint = if (currentRoute == Screen.Profile.route) Color(0xFF821ACC) else Color.Gray
+                    )
                 }
             }
         }
@@ -248,11 +266,15 @@ fun BottomNavigationBar(
 }
 
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(navController: NavController, onPlusSelected: () -> Unit = {}) {
     TopAppBar(
-        title = { Text("Plantas") },
+        title = { Text(
+            text = "Plantas",
+            fontWeight = FontWeight.Bold
+        ) },
         actions = {
             IconButton(onClick = onPlusSelected ) {
                 Icon(Icons.Filled.Add, contentDescription = "Añadir planta")

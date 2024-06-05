@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:height="24dp" android:tint="#000000" android:viewportHeight="24" android:viewportWidth="24" android:width="24dp">
+
+    <!-- Estrella grande -->
+    <path
+        android:fillColor="#1A2244"
+        android:pathData="M10 2L13 9L20 12L13 15L10 22L7 15L0 12L7 9L10 2Z" />
+    <!-- Estrella pequeña arriba derecha -->
+    <path
+        android:fillColor="#1A2244"
+        android:pathData="M18 2L19.09 4.91L22 6L19.09 7.09L18 10L16.91 7.09L14 6L16.91 4.91L18 2Z" />
+    <!-- Estrella pequeña abajo derecha -->
+    <path
+        android:fillColor="#1A2244"
+        android:pathData="M18 14L19.09 16.91L22 18L19.09 19.09L18 22L16.91 19.09L14 18L16.91 16.91L18 14Z" />
+</vector>
+
