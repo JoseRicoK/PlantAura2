@@ -88,29 +88,41 @@ fun SensorConnectionScreen(
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SensorConnectionTopBar() {
-    TopAppBar(title = { Text("Conexión de Sensores") })
+    TopAppBar(title = { Text("Conexión de Sensores", fontWeight = FontWeight.Bold) })
 }
 
 @Composable
 fun TextoBusqueda(viewModel: SensorConnectionViewModel, context: Context) {
-    Text(
-        text = "Buscando sensores...",
-        fontSize = 24.sp,
-        fontWeight = FontWeight.Bold,
-        textAlign = TextAlign.Center,
+    Column(
         modifier = Modifier
             .padding(16.dp)
-            .fillMaxWidth()
-    )
-    Spacer(modifier = Modifier.height(20.dp))
-    Button(onClick = { viewModel.discoverESP32(context) }) {
-        Text(text = "Buscar ESP32")
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Buscando sensores...",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        Button(
+            onClick = { viewModel.discoverESP32(context) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        ) {
+            Text(text = "Buscar ESP32")
+        }
     }
 }
+
 
 @Composable
 fun SensorList(sensors: List<Sensor>, onSensorClick: (String) -> Unit) {
@@ -145,9 +157,8 @@ fun SensorItem(sensor: Sensor, onClick: () -> Unit) {
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(text = "Sensor ID: ${sensor.id}", fontWeight = FontWeight.Bold)
-                Text(text = "IP: ${sensor.ip}")
-                Text(text = "Humedad: ${sensor.humedad}")
+                Text(text = "${sensor.sensor}", fontWeight = FontWeight.Bold)
+                Text(text = "Id: ${sensor.id}")
             }
         }
     }

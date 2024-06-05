@@ -73,19 +73,23 @@ class MainActivity : ComponentActivity() {
 
 
         // Registro del ActivityResultLauncher para la cámara
-        cameraLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    val imageBitmap = result.data?.extras?.get("data") as Bitmap
-                    val sensorId =
-                        sensorConnectionViewModel.currentSensorId // Obtener el ID del sensor descubierto
+        cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val imageBitmap = result.data?.extras?.get("data") as? Bitmap
+                if (imageBitmap != null) {
+                    val sensorId = sensorConnectionViewModel.currentSensorId // Obtener el ID del sensor descubierto
                     if (sensorId != null) {
                         sensorConnectionViewModel.saveImage(imageBitmap, sensorId)
                     } else {
                         Log.e("MainActivity", "Sensor no encontrado")
                     }
+                } else {
+                    Log.e("MainActivity", "No se pudo obtener el bitmap de la cámara")
                 }
+            } else {
+                Log.e("MainActivity", "El resultado de la cámara no fue OK")
             }
+        }
 
         // Registro del ActivityResultLauncher para permisos
         requestPermissionLauncher =
