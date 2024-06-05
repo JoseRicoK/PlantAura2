@@ -15,5 +15,3 @@ class SettingsViewModel : ViewModel() {
         navController.navigate("profile")
     }
 }
-
-

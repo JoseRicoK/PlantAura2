@@ -43,7 +43,7 @@ class ProfileViewModel(
                 _plants.value = plantList
                 Log.d("ProfileViewModel", "Plantas cargadas: $plantList")
             }.onFailure { exception ->
-                Log.e("ProfileViewModel", "Error loading plants", exception)
+                Log.e("ProfileViewModel", "Error cargando las plantas", exception)
             }
         }
     }

@@ -46,12 +46,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -179,6 +176,7 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                     humiditySueloRange = plantTypeRanges?.humedadSueloMin?.let { min -> plantTypeRanges?.humedadSueloMax?.let { max -> min..max } } ?: 0..100,
                     temperatureRange = plantTypeRanges?.temperaturaAmbienteMin?.toFloat()?.let { min -> plantTypeRanges?.temperaturaAmbienteMax?.toFloat()?.let { max -> min..max } } ?: 0f..100f,
                     luminosidadRange = plantTypeRanges?.luzMin?.toFloat()?.let { min -> plantTypeRanges?.luzMax?.toFloat()?.let { max -> min..max } } ?: 0f..100f,
+                    measurementData = viewModel.measurementData.collectAsState().value, // Pasar los datos de medición aquí
                     viewModel = viewModel
                 )
             } else {
@@ -194,14 +192,6 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
             PredictHealthSection(viewModel = viewModel)
 
             Spacer(modifier = Modifier.height(10.dp))
-
-            MeasurementSection(
-                measurementData = viewModel.measurementData.collectAsState().value,
-                lastHumidityAmbiente = lastHumidityAmbiente,
-                lastHumiditySuelo = lastHumiditySuelo,
-                lastTemperature = lastTemperature,
-                lastLuminosidad = lastLuminosidad
-            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -230,6 +220,7 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         }
     }
 }
+
 
 @Composable
 fun AnimatedBorderContainer(viewModel: PlantDetailsViewModel) {
@@ -481,8 +472,15 @@ fun PlantTypeDetails(
     humiditySueloRange: IntRange,
     temperatureRange: ClosedFloatingPointRange<Float>,
     luminosidadRange: ClosedFloatingPointRange<Float>,
+    measurementData: List<MeasurementData>,
     viewModel: PlantDetailsViewModel
 ) {
+    // Estados para controlar la visibilidad de las gráficas
+    val showHumidityAmbienteGraph = remember { mutableStateOf(false) }
+    val showHumiditySueloGraph = remember { mutableStateOf(false) }
+    val showTemperatureGraph = remember { mutableStateOf(false) }
+    val showLuminosidadGraph = remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -511,8 +509,13 @@ fun PlantTypeDetails(
                 parameterValue = lastHumidityAmbiente,
                 range = humidityAmbienteRange,
                 recommendation = viewModel.getRecommendation("Humedad Ambiente", lastHumidityAmbiente.toFloat(), humidityAmbienteRange.start.toFloat()..humidityAmbienteRange.endInclusive.toFloat()),
-                unit = "%"
+                unit = "%",
+                showGraph = showHumidityAmbienteGraph.value,
+                onShowGraphClick = { showHumidityAmbienteGraph.value = !showHumidityAmbienteGraph.value }
             )
+            if (showHumidityAmbienteGraph.value) {
+                MeasurementGraph(measurementData.map { it.timestamp to it.humedadAmbiente }, "Humedad Ambiente")
+            }
         }
         if (lastHumiditySuelo != null) {
             ParameterStatusRow(
@@ -520,8 +523,13 @@ fun PlantTypeDetails(
                 parameterValue = lastHumiditySuelo,
                 range = humiditySueloRange,
                 recommendation = viewModel.getRecommendation("Humedad Suelo", lastHumiditySuelo.toFloat(), humiditySueloRange.start.toFloat()..humiditySueloRange.endInclusive.toFloat()),
-                unit = "%"
+                unit = "%",
+                showGraph = showHumiditySueloGraph.value,
+                onShowGraphClick = { showHumiditySueloGraph.value = !showHumiditySueloGraph.value }
             )
+            if (showHumiditySueloGraph.value) {
+                MeasurementGraph(measurementData.map { it.timestamp to it.humedadSuelo }, "Humedad Suelo")
+            }
         }
         if (lastTemperature != null) {
             ParameterStatusRow(
@@ -529,8 +537,13 @@ fun PlantTypeDetails(
                 parameterValue = lastTemperature.toInt(),
                 range = temperatureRange.start.toInt()..temperatureRange.endInclusive.toInt(),
                 recommendation = viewModel.getRecommendation("Temperatura", lastTemperature, temperatureRange),
-                unit = "ºC"
+                unit = "ºC",
+                showGraph = showTemperatureGraph.value,
+                onShowGraphClick = { showTemperatureGraph.value = !showTemperatureGraph.value }
             )
+            if (showTemperatureGraph.value) {
+                MeasurementGraph(measurementData.map { it.timestamp to it.temperatura.toInt() }, "Temperatura")
+            }
         }
         if (lastLuminosidad != null) {
             ParameterStatusRow(
@@ -538,8 +551,13 @@ fun PlantTypeDetails(
                 parameterValue = lastLuminosidad.toInt(),
                 range = luminosidadRange.start.toInt()..luminosidadRange.endInclusive.toInt(),
                 recommendation = viewModel.getRecommendation("Luminosidad", lastLuminosidad, luminosidadRange),
-                unit = "luxes"
+                unit = "luxes",
+                showGraph = showLuminosidadGraph.value,
+                onShowGraphClick = { showLuminosidadGraph.value = !showLuminosidadGraph.value }
             )
+            if (showLuminosidadGraph.value) {
+                MeasurementGraph(measurementData.map { it.timestamp to it.luminosidad.toInt() }, "Luminosidad")
+            }
         }
         Spacer(modifier = Modifier.height(14.dp))
         HorizontalDivider(
@@ -549,13 +567,16 @@ fun PlantTypeDetails(
         )
     }
 }
+
 @Composable
 fun ParameterStatusRow(
     parameterName: String,
     parameterValue: Int,
     range: IntRange,
     unit: String = "",
-    recommendation: String?
+    recommendation: String?,
+    showGraph: Boolean,
+    onShowGraphClick: () -> Unit
 ) {
     val isWithinRange = parameterValue in range
     val statusIcon = if (isWithinRange) {
@@ -589,7 +610,7 @@ fun ParameterStatusRow(
                     .fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = Color(0xFFFFF3E0),
-                    ),
+                ),
                 border = BorderStroke(1.dp, Color(0xFFFFA500)),
             ) {
                 Row(
@@ -610,118 +631,12 @@ fun ParameterStatusRow(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun MeasurementSection(
-    measurementData: List<MeasurementData>,
-    lastHumidityAmbiente: Int?,
-    lastHumiditySuelo: Int?,
-    lastTemperature: Float?,
-    lastLuminosidad: Float?
-) {
-    // Recuadro para humedad ambiente y gráfica
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
+        Button(
+            colors = ButtonDefaults.buttonColors(containerColor = if (showGraph) Color(0xFF4CAF50) else Color(0xFFD0BCFF)),
+            onClick = onShowGraphClick,
+            modifier = Modifier.align(Alignment.End)
         ) {
-            Text(
-                text = "Humedad Ambiente: $lastHumidityAmbiente%",
-                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            if (measurementData.isNotEmpty()) {
-                MeasurementGraph(measurementData.map { it.timestamp to it.humedadAmbiente }, "Humedad Ambiente")
-            } else {
-                Text(text = "Cargando datos de humedad ambiente...")
-            }
-        }
-    }
-    Spacer(modifier = Modifier.height(16.dp))
-    // Recuadro para humedad suelo y gráfica
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Humedad Suelo: $lastHumiditySuelo%",
-                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            if (measurementData.isNotEmpty()) {
-                MeasurementGraph(measurementData.map { it.timestamp to it.humedadSuelo }, "Humedad Suelo")
-            } else {
-                Text(text = "Cargando datos de humedad suelo...")
-            }
-        }
-    }
-    Spacer(modifier = Modifier.height(16.dp))
-    // Recuadro para temperatura y gráfica
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Temperatura: $lastTemperature°C",
-                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            if (measurementData.isNotEmpty()) {
-                MeasurementGraph(measurementData.map { it.timestamp to it.temperatura.toInt() }, "Temperatura")
-            } else {
-                Text(text = "Cargando datos de temperatura...")
-            }
-        }
-    }
-    Spacer(modifier = Modifier.height(16.dp))
-    // Recuadro para luminosidad y gráfica
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Luminosidad: $lastLuminosidad luxes",
-                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            if (measurementData.isNotEmpty()) {
-                MeasurementGraph(measurementData.map { it.timestamp to it.luminosidad.toInt() }, "Luminosidad")
-            } else {
-                Text(text = "Cargando datos de luminosidad...")
-            }
+            Text(text = if (showGraph) "Ocultar Gráfica" else "Ver Gráfica")
         }
     }
 }
@@ -775,6 +690,7 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String ) {
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp) // Ajustar la altura del contenedor
+            .padding(top = 16.dp) // Añadir margen superior
     ) {
         LineGraph(
             modifier = Modifier.fillMaxSize(),

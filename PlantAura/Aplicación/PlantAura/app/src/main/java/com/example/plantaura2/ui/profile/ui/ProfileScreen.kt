@@ -39,7 +39,7 @@ fun ProfileScreen(viewModel: ProfileViewModel, navController: NavController) {
             .padding(16.dp)
     ) {
         Text(
-            text = "Profile",
+            text = "Perfil",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -122,10 +122,6 @@ fun ProfileScreen(viewModel: ProfileViewModel, navController: NavController) {
     )
 }
 
-
-
-
-
 @Composable
 fun ChangePasswordSection(newPassword: String, onPasswordChange: (String) -> Unit, onChangePassword: () -> Unit) {
     Column {
@@ -137,6 +133,7 @@ fun ChangePasswordSection(newPassword: String, onPasswordChange: (String) -> Uni
         )
         Spacer(modifier = Modifier.height(8.dp))
         Button(
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD0BCFF)),
             onClick = onChangePassword,
             modifier = Modifier
                 .fillMaxWidth()
@@ -182,15 +179,7 @@ fun PlantItem(plant: Plant, onDeletePlant: () -> Unit) {
                 contentColor = MaterialTheme.colorScheme.onError
             )
         ) {
-            Text("Delete")
+            Text("Borrar")
         }
     }
 }
-
-
-
-
-
-
-
-
