@@ -52,7 +52,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel(), navController: Na
 
             Button(onClick = {isTravelModeActive = !isTravelModeActive},
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isTravelModeActive) Color(0xFF4CAF50) else Color(0xFF2196F3)
+                    containerColor = if (isTravelModeActive) Color(0xFF4CAF50) else Color(0xFFD0BCFF)
                 )) {
                 Text(text = "Modo viaje")
             }
@@ -60,17 +60,15 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel(), navController: Na
             if (isTravelModeActive) {
                 Spacer(modifier = Modifier.height(16.dp))
                 dropDownMenu1 { selected ->
-                    selectedTravelDays = selected.toString()
+                    selectedTravelDays = selected
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
+                dropDownMenu2 { selected ->
+                    selectedNotificationInterval = selected
+                }
             }
 
-
-            Spacer(modifier = Modifier.height(16.dp))
-            dropDownMenu2 { selected ->
-                selectedNotificationInterval = selected.toString()
-            }
 
             Spacer(modifier = Modifier.height(16.dp))
             Button(
@@ -85,7 +83,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel(), navController: Na
                     notificationSent = true
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (notificationSent) Color(0xFF4CAF50) else Color(0xFF2196F3))
+                    containerColor = if (notificationSent) Color(0xFF4CAF50) else Color(0xFFD0BCFF))
             ) {
                 Text(text = "Confirmar y probar notificación")
             }
@@ -97,16 +95,11 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel(), navController: Na
 
         }
 
-        if (selectedTravelDays != null && selectedNotificationInterval != null) {
-            Spacer(modifier = Modifier.height(16.dp))
-            ShowFragment( //parte del Fragmento
-                travelDays = selectedTravelDays!!,
-                notificationInterval = selectedNotificationInterval!!
-            )
-        }
+
     }
 
     BottomNavigationBar(
+        navController = navController,
         onSettingsClick = { viewModel.onSettingsClick(navController) },
         onHomeClick = { viewModel.onHomeClick(navController) },
         onProfileClick = { viewModel.onProfileClick(navController) }
@@ -220,12 +213,7 @@ fun dropDownMenu2(onSelectionChanged: (String) -> Unit) {
     }
 }
 
-@Composable
-fun ShowFragment(travelDays: String, notificationInterval: String) {
-    // Aquí es donde implementarías la lógica para mostrar el fragmento basado en las selecciones
 
-    Text(text = "Fragmento para $travelDays y $notificationInterval")
-}
 
 
 fun calcularIntervalo(

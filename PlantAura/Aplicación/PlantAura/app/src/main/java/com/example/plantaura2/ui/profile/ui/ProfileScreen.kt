@@ -10,6 +10,8 @@ import androidx.navigation.NavController
 import com.example.plantaura2.ui.home.ui.BottomNavigationBar
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -23,6 +25,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProfileScreen(viewModel: ProfileViewModel, navController: NavController) {
     val plants by viewModel.plants.collectAsState()
+    val userEmail by viewModel.userEmail.observeAsState()
     var newPassword by remember { mutableStateOf("") }
     val passwordChangeMessage: String? by viewModel.passwordChangeMessage.observeAsState()
 
@@ -41,6 +44,32 @@ fun ProfileScreen(viewModel: ProfileViewModel, navController: NavController) {
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
         )
+        userEmail?.let {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = "User Icon",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = it,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal
+                )
+            }
+        }
+        HorizontalDivider()
+        Text(
+            text = "Tus Plantas:",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
         PlantList(plants = plants, onDeletePlant = { plantId ->
             viewModel.onDeletePlantSelected(plantId)
             coroutineScope.launch {
@@ -52,7 +81,13 @@ fun ProfileScreen(viewModel: ProfileViewModel, navController: NavController) {
         })
         Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider()  // Línea divisoria
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = "Cambiar Contraseña:",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
         ChangePasswordSection(
             newPassword = newPassword,
             onPasswordChange = { newPassword = it },
@@ -80,11 +115,16 @@ fun ProfileScreen(viewModel: ProfileViewModel, navController: NavController) {
     }
 
     BottomNavigationBar(
+        navController = navController,
         onSettingsClick = { viewModel.onSettingsClick(navController) },
         onHomeClick = { viewModel.onHomeClick(navController) },
         onProfileClick = { viewModel.onProfileClick(navController) }
     )
 }
+
+
+
+
 
 @Composable
 fun ChangePasswordSection(newPassword: String, onPasswordChange: (String) -> Unit, onChangePassword: () -> Unit) {
@@ -92,7 +132,7 @@ fun ChangePasswordSection(newPassword: String, onPasswordChange: (String) -> Uni
         OutlinedTextField(
             value = newPassword,
             onValueChange = onPasswordChange,
-            label = { Text("New Password") },
+            label = { Text("Nueva Contraseña") },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -101,9 +141,10 @@ fun ChangePasswordSection(newPassword: String, onPasswordChange: (String) -> Uni
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
+                .padding(vertical = 6.dp)
         ) {
             Text(
-                text = "Change Password",
+                text = "Cambiar Contraseña",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )

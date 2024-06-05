@@ -36,6 +36,7 @@ import com.example.plantaura2.domain.usecase.SignUpUseCase
 import com.example.plantaura2.domain.usecase.DeletePlantUseCase
 import com.example.plantaura2.domain.usecase.GetPlantsUseCase
 import com.example.plantaura2.domain.usecase.ChangePasswordUseCase
+import com.example.plantaura2.domain.usecase.GetUserEmailUseCase
 import com.example.plantaura2.navigation.AppNavigation
 import com.example.plantaura2.ui.home.ui.HomeViewModel
 import com.example.plantaura2.ui.home.ui.HomeViewModelFactory
@@ -107,6 +108,7 @@ class MainActivity : ComponentActivity() {
         val getPlantIdByNameUseCase = GetPlantIdByNameUseCase(FirebaseFirestore.getInstance())
         val deletePlantUseCase = DeletePlantUseCase(FirebaseFirestore.getInstance())
         val getPlantsUseCase = GetPlantsUseCase(FirebaseFirestore.getInstance())
+        val getUserEmailUseCase = GetUserEmailUseCase(FirebaseAuth.getInstance())
 
         val loginViewModelFactory = LoginViewModelFactory(authUseCase)
         val homeViewModelFactory =
@@ -122,7 +124,7 @@ class MainActivity : ComponentActivity() {
         val profileViewModel =
             ViewModelProvider(
                 this,
-                ProfileViewModelFactory(deletePlantUseCase, getPlantsUseCase, changePasswordUseCase)
+                ProfileViewModelFactory(deletePlantUseCase, getPlantsUseCase, changePasswordUseCase, getUserEmailUseCase)
             )[ProfileViewModel::class.java]
         val settingsViewModel: SettingsViewModel by viewModels()
 
