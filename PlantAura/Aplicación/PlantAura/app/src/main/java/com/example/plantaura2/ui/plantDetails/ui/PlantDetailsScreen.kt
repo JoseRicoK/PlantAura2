@@ -96,15 +96,29 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-            ) {
-                if (plantId != null) {
-                    val imagePath = "${imageDirectory.path}/sensor_$plantId.jpg"
-                    val bitmap = BitmapFactory.decodeFile(imagePath)
-                    if (bitmap != null) {
+            if (plantId != null) {
+                val imagePath = "${imageDirectory.path}/sensor_$plantId.jpg"
+                val bitmap = BitmapFactory.decodeFile(imagePath)
+                if (bitmap == null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(90.dp)
+                    ){
+                        Text(
+                            text = plantName,
+                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                            //.padding(bottom = 8.dp)
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    ) {
                         Image(
                             bitmap = bitmap.asImageBitmap(),
                             contentDescription = "Imagen de $plantName",
@@ -113,26 +127,26 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                                 .height(200.dp),
                             contentScale = ContentScale.Crop
                         )
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(Color.Transparent, Color(0xFFFEFAFE)),
+                                        startY = 5f,
+                                        endY = 500f
+                                    )
+                                )
+                        )
+                        Text(
+                            text = plantName,
+                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                            //.padding(bottom = 8.dp)
+                        )
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color(0xFFFEFAFE)),
-                                startY = 5f,
-                                endY = 500f
-                            )
-                        )
-                )
-                Text(
-                    text = plantName,
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        //.padding(bottom = 8.dp)
-                )
             }
 
             Spacer(modifier = Modifier.height(5.dp))
