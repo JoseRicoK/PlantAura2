@@ -99,6 +99,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel(), navController: Na
     }
 
     BottomNavigationBar(
+        navController = navController,
         onSettingsClick = { viewModel.onSettingsClick(navController) },
         onHomeClick = { viewModel.onHomeClick(navController) },
         onProfileClick = { viewModel.onProfileClick(navController) }

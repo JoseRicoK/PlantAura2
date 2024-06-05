@@ -12,13 +12,15 @@ import com.example.plantaura2.domain.usecase.DeletePlantUseCase
 import com.example.plantaura2.domain.usecase.ChangePasswordUseCase
 import com.example.plantaura2.domain.usecase.GetPlantsUseCase
 import com.example.plantaura2.domain.model.Plant
+import com.example.plantaura2.domain.usecase.GetUserEmailUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class ProfileViewModel(
     private val deletePlantUseCase: DeletePlantUseCase,
     private val getPlantsUseCase: GetPlantsUseCase,
-    private val changePasswordUseCase: ChangePasswordUseCase
+    private val changePasswordUseCase: ChangePasswordUseCase,
+    private val getUserEmailUseCase: GetUserEmailUseCase
 ) : ViewModel() {
     private val _plants = MutableStateFlow<List<Plant>>(emptyList())
     val plants: StateFlow<List<Plant>> = _plants
@@ -26,8 +28,12 @@ class ProfileViewModel(
     private val _passwordChangeMessage = MutableLiveData<String?>()
     val passwordChangeMessage: LiveData<String?> = _passwordChangeMessage
 
+    private val _userEmail = MutableLiveData<String?>()
+    val userEmail: LiveData<String?> = _userEmail
+
     init {
         loadPlants()
+        _userEmail.value = getUserEmailUseCase.getUserEmail()
     }
 
     private fun loadPlants() {
@@ -80,12 +86,13 @@ class ProfileViewModel(
 class ProfileViewModelFactory(
     private val deletePlantUseCase: DeletePlantUseCase,
     private val getPlantsUseCase: GetPlantsUseCase,
-    private val changePasswordUseCase: ChangePasswordUseCase
+    private val changePasswordUseCase: ChangePasswordUseCase,
+    private val getUserEmailUseCase: GetUserEmailUseCase
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ProfileViewModel(deletePlantUseCase, getPlantsUseCase, changePasswordUseCase) as T
+            return ProfileViewModel(deletePlantUseCase, getPlantsUseCase, changePasswordUseCase, getUserEmailUseCase) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
