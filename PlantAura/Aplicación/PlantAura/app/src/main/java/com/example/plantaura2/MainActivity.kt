@@ -48,6 +48,7 @@ import com.example.plantaura2.ui.questionHub.ui.QuestionHubViewModel
 import com.example.plantaura2.ui.sensorConnection.ui.SensorConnectionViewModel
 import com.example.plantaura2.ui.sensorConnection.ui.SensorConnectionViewModelFactory
 import com.example.plantaura2.ui.settings.ui.SettingsViewModel
+import com.example.plantaura2.ui.settings.ui.SettingsViewModelFactory
 import com.example.plantaura2.ui.signup.ui.SignUpViewModel
 import com.example.plantaura2.ui.signup.ui.SignUpViewModelFactory
 import com.example.plantaura2.ui.theme.PlantAura2Theme
@@ -63,14 +64,11 @@ class MainActivity : ComponentActivity() {
         const val MY_CHANEL_ID = "myChannel"
     }
 
-
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         createNotificationChannel()
-
 
         // Registro del ActivityResultLauncher para la cámara
         cameraLauncher =
@@ -124,9 +122,13 @@ class MainActivity : ComponentActivity() {
         val profileViewModel =
             ViewModelProvider(
                 this,
-                ProfileViewModelFactory(deletePlantUseCase, getPlantsUseCase, changePasswordUseCase, getUserEmailUseCase)
+                ProfileViewModelFactory(changePasswordUseCase, getUserEmailUseCase)
             )[ProfileViewModel::class.java]
-        val settingsViewModel: SettingsViewModel by viewModels()
+        val settingsViewModel =
+            ViewModelProvider(
+                this,
+                SettingsViewModelFactory(deletePlantUseCase, getPlantsUseCase)
+            )[SettingsViewModel::class.java]
 
         setContent {
             PlantAura2Theme {
