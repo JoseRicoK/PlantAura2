@@ -2,6 +2,7 @@ package com.example.plantaura2.ui.plantDetails.ui
 
 import android.app.Application
 import android.graphics.BitmapFactory
+import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -30,8 +31,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ElectricalServices
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -79,6 +87,7 @@ import com.example.plantaura2.R
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
+import androidx.compose.material.icons.filled.*
 
 
 @Composable
@@ -95,11 +104,19 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
     )
     val plantName by viewModel.plantName.collectAsState()
     val plantType by viewModel.plantType.collectAsState()
+    val sensorType by viewModel.sensorType.collectAsState() // Añadir esta línea
     val plantTypeRanges by viewModel.plantTypeRanges.collectAsState()
     val lastHumidityAmbiente by viewModel.lastHumidityAmbiente.collectAsState()
     val lastHumiditySuelo by viewModel.lastHumiditySuelo.collectAsState()
     val lastTemperature by viewModel.lastTemperature.collectAsState()
     val lastLuminosidad by viewModel.lastLuminosidad.collectAsState()
+    val lastConductividad by viewModel.lastConductividad.collectAsState()
+    val lastPh by viewModel.lastPh.collectAsState()
+    val lastNitrogeno by viewModel.lastNitrogeno.collectAsState()
+    val lastFosforo by viewModel.lastFosforo.collectAsState()
+    val lastPotasio by viewModel.lastPotasio.collectAsState()
+    val lastSalinidad by viewModel.lastSalinidad.collectAsState()
+    val lastTds by viewModel.lastTds.collectAsState()
     val revive by viewModel.revive.collectAsState()
     val (showDialog, setShowDialog) = remember { mutableStateOf(false) }
     val plantId by viewModel.plantId.collectAsState()
@@ -127,7 +144,6 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                             style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                            //.padding(bottom = 8.dp)
                         )
                     }
                 } else {
@@ -160,7 +176,6 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                             style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                            //.padding(bottom = 8.dp)
                         )
                     }
                 }
@@ -170,16 +185,31 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
             if (plantType.isNotEmpty() && plantTypeRanges != null) {
                 PlantTypeDetails(
                     plantType = plantType,
-                    plantTypeRanges = plantTypeRanges!!, // Not null assert
+                    plantTypeRanges = plantTypeRanges!!,
                     lastHumidityAmbiente = lastHumidityAmbiente,
                     lastHumiditySuelo = lastHumiditySuelo,
                     lastTemperature = lastTemperature,
                     lastLuminosidad = lastLuminosidad,
+                    lastConductividad = lastConductividad,
+                    lastPh = lastPh,
+                    lastNitrogeno = lastNitrogeno,
+                    lastFosforo = lastFosforo,
+                    lastPotasio = lastPotasio,
+                    lastSalinidad = lastSalinidad,
+                    lastTds = lastTds,
                     humidityAmbienteRange = plantTypeRanges?.humedadAmbienteMin?.let { min -> plantTypeRanges?.humedadAmbienteMax?.let { max -> min..max } } ?: 0..100,
                     humiditySueloRange = plantTypeRanges?.humedadSueloMin?.let { min -> plantTypeRanges?.humedadSueloMax?.let { max -> min..max } } ?: 0..100,
                     temperatureRange = plantTypeRanges?.temperaturaAmbienteMin?.toFloat()?.let { min -> plantTypeRanges?.temperaturaAmbienteMax?.toFloat()?.let { max -> min..max } } ?: 0f..100f,
                     luminosidadRange = plantTypeRanges?.luzMin?.toFloat()?.let { min -> plantTypeRanges?.luzMax?.toFloat()?.let { max -> min..max } } ?: 0f..100f,
-                    viewModel = viewModel
+                    conductividadRange = plantTypeRanges?.conductividadMin?.let { min -> plantTypeRanges?.conductividadMax?.let { max -> min..max } } ?: 0..100,
+                    phRange = plantTypeRanges?.phMin?.toFloat()?.let { min -> plantTypeRanges?.phMax?.toFloat()?.let { max -> min..max } } ?: 0f..14f,
+                    nitrogenoRange = plantTypeRanges?.nitrogenoMin?.let { min -> plantTypeRanges?.nitrogenoMax?.let { max -> min..max } } ?: 0..100,
+                    fosforoRange = plantTypeRanges?.fosforoMin?.let { min -> plantTypeRanges?.fosforoMax?.let { max -> min..max } } ?: 0..100,
+                    potasioRange = plantTypeRanges?.potasioMin?.let { min -> plantTypeRanges?.potasioMax?.let { max -> min..max } } ?: 0..100,
+                    salinidadRange = plantTypeRanges?.salinidadMin?.let { min -> plantTypeRanges?.salinidadMax?.let { max -> min..max } } ?: 0..100,
+                    tdsRange = plantTypeRanges?.tdsMin?.let { min -> plantTypeRanges?.tdsMax?.let { max -> min..max } } ?: 0..100,
+                    viewModel = viewModel,
+                    sensorType = sensorType // Añadir esta línea
                 )
             } else {
                 Text(
@@ -189,21 +219,19 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                 )
             }
 
-            //Spacer(modifier = Modifier.height(16.dp))
+            //Spacer(modifier = Modifier.height(8.dp))
 
             PredictHealthSection(viewModel = viewModel)
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            MeasurementSection(
-                measurementData = viewModel.measurementData.collectAsState().value,
-                lastHumidityAmbiente = lastHumidityAmbiente,
-                lastHumiditySuelo = lastHumiditySuelo,
-                lastTemperature = lastTemperature,
-                lastLuminosidad = lastLuminosidad
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                thickness = 0.7.dp,
+                color = Color.Gray
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Botón "Revive"
             Row(
@@ -230,6 +258,10 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         }
     }
 }
+
+
+
+
 
 @Composable
 fun AnimatedBorderContainer(viewModel: PlantDetailsViewModel) {
@@ -477,12 +509,39 @@ fun PlantTypeDetails(
     lastHumiditySuelo: Int?,
     lastTemperature: Float?,
     lastLuminosidad: Float?,
+    lastConductividad: Int?,
+    lastPh: Float?,
+    lastNitrogeno: Int?,
+    lastFosforo: Int?,
+    lastPotasio: Int?,
+    lastSalinidad: Int?,
+    lastTds: Int?,
     humidityAmbienteRange: IntRange,
     humiditySueloRange: IntRange,
     temperatureRange: ClosedFloatingPointRange<Float>,
     luminosidadRange: ClosedFloatingPointRange<Float>,
+    conductividadRange: IntRange,
+    phRange: ClosedFloatingPointRange<Float>,
+    nitrogenoRange: IntRange,
+    fosforoRange: IntRange,
+    potasioRange: IntRange,
+    salinidadRange: IntRange,
+    tdsRange: IntRange,
+    sensorType: String,
     viewModel: PlantDetailsViewModel
 ) {
+    val showHumidityAmbienteGraph = remember { mutableStateOf(false) }
+    val showHumiditySueloGraph = remember { mutableStateOf(false) }
+    val showTemperatureGraph = remember { mutableStateOf(false) }
+    val showLuminosidadGraph = remember { mutableStateOf(false) }
+    val showConductividadGraph = remember { mutableStateOf(false) }
+    val showPhGraph = remember { mutableStateOf(false) }
+    val showNitrogenoGraph = remember { mutableStateOf(false) }
+    val showFosforoGraph = remember { mutableStateOf(false) }
+    val showPotasioGraph = remember { mutableStateOf(false) }
+    val showSalinidadGraph = remember { mutableStateOf(false) }
+    val showTdsGraph = remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -511,7 +570,10 @@ fun PlantTypeDetails(
                 parameterValue = lastHumidityAmbiente,
                 range = humidityAmbienteRange,
                 recommendation = viewModel.getRecommendation("Humedad Ambiente", lastHumidityAmbiente.toFloat(), humidityAmbienteRange.start.toFloat()..humidityAmbienteRange.endInclusive.toFloat()),
-                unit = "%"
+                unit = "%",
+                onShowGraph = { showHumidityAmbienteGraph.value = !showHumidityAmbienteGraph.value },
+                isGraphVisible = showHumidityAmbienteGraph.value,
+                measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.humedadAmbiente ?: 0) }
             )
         }
         if (lastHumiditySuelo != null) {
@@ -520,7 +582,10 @@ fun PlantTypeDetails(
                 parameterValue = lastHumiditySuelo,
                 range = humiditySueloRange,
                 recommendation = viewModel.getRecommendation("Humedad Suelo", lastHumiditySuelo.toFloat(), humiditySueloRange.start.toFloat()..humiditySueloRange.endInclusive.toFloat()),
-                unit = "%"
+                unit = "%",
+                onShowGraph = { showHumiditySueloGraph.value = !showHumiditySueloGraph.value },
+                isGraphVisible = showHumiditySueloGraph.value,
+                measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.humedadSuelo ?: 0) }
             )
         }
         if (lastTemperature != null) {
@@ -529,7 +594,10 @@ fun PlantTypeDetails(
                 parameterValue = lastTemperature.toInt(),
                 range = temperatureRange.start.toInt()..temperatureRange.endInclusive.toInt(),
                 recommendation = viewModel.getRecommendation("Temperatura", lastTemperature, temperatureRange),
-                unit = "ºC"
+                unit = "ºC",
+                onShowGraph = { showTemperatureGraph.value = !showTemperatureGraph.value },
+                isGraphVisible = showTemperatureGraph.value,
+                measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.temperatura?.toInt() ?: 0) }
             )
         }
         if (lastLuminosidad != null) {
@@ -538,8 +606,99 @@ fun PlantTypeDetails(
                 parameterValue = lastLuminosidad.toInt(),
                 range = luminosidadRange.start.toInt()..luminosidadRange.endInclusive.toInt(),
                 recommendation = viewModel.getRecommendation("Luminosidad", lastLuminosidad, luminosidadRange),
-                unit = "luxes"
+                unit = "luxes",
+                onShowGraph = { showLuminosidadGraph.value = !showLuminosidadGraph.value },
+                isGraphVisible = showLuminosidadGraph.value,
+                measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.luminosidad?.toInt() ?: 0) }
             )
+        }
+
+        // Datos adicionales para el sensor Pro
+        if (sensorType == "Sensor PlantAura Pro") {
+            if (lastConductividad != null) {
+                ParameterStatusRow(
+                    parameterName = "Conductividad",
+                    parameterValue = lastConductividad,
+                    range = conductividadRange,
+                    recommendation = viewModel.getRecommendation("Conductividad", lastConductividad.toFloat(), conductividadRange.start.toFloat()..conductividadRange.endInclusive.toFloat()),
+                    unit = "µS/cm",
+                    onShowGraph = { showConductividadGraph.value = !showConductividadGraph.value },
+                    isGraphVisible = showConductividadGraph.value,
+                    measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.conductividad ?: 0) }
+                )
+            }
+            if (lastPh != null) {
+                ParameterStatusRow(
+                    parameterName = "pH",
+                    parameterValue = lastPh.toInt(),
+                    range = phRange.start.toInt()..phRange.endInclusive.toInt(),
+                    recommendation = viewModel.getRecommendation("pH", lastPh, phRange),
+                    unit = "pH",
+                    onShowGraph = { showPhGraph.value = !showPhGraph.value },
+                    isGraphVisible = showPhGraph.value,
+                    measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.ph?.toInt() ?: 0) }
+                )
+            }
+            if (lastNitrogeno != null) {
+                ParameterStatusRow(
+                    parameterName = "Nitrógeno",
+                    parameterValue = lastNitrogeno,
+                    range = nitrogenoRange,
+                    recommendation = viewModel.getRecommendation("Nitrógeno", lastNitrogeno.toFloat(), nitrogenoRange.start.toFloat()..nitrogenoRange.endInclusive.toFloat()),
+                    unit = "mg/kg",
+                    onShowGraph = { showNitrogenoGraph.value = !showNitrogenoGraph.value },
+                    isGraphVisible = showNitrogenoGraph.value,
+                    measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.nitrogeno ?: 0) }
+                )
+            }
+            if (lastFosforo != null) {
+                ParameterStatusRow(
+                    parameterName = "Fósforo",
+                    parameterValue = lastFosforo,
+                    range = fosforoRange,
+                    recommendation = viewModel.getRecommendation("Fósforo", lastFosforo.toFloat(), fosforoRange.start.toFloat()..fosforoRange.endInclusive.toFloat()),
+                    unit = "mg/kg",
+                    onShowGraph = { showFosforoGraph.value = !showFosforoGraph.value },
+                    isGraphVisible = showFosforoGraph.value,
+                    measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.fosforo ?: 0) }
+                )
+            }
+            if (lastPotasio != null) {
+                ParameterStatusRow(
+                    parameterName = "Potasio",
+                    parameterValue = lastPotasio,
+                    range = potasioRange,
+                    recommendation = viewModel.getRecommendation("Potasio", lastPotasio.toFloat(), potasioRange.start.toFloat()..potasioRange.endInclusive.toFloat()),
+                    unit = "mg/kg",
+                    onShowGraph = { showPotasioGraph.value = !showPotasioGraph.value },
+                    isGraphVisible = showPotasioGraph.value,
+                    measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.potasio ?: 0) }
+                )
+            }
+            if (lastSalinidad != null) {
+                ParameterStatusRow(
+                    parameterName = "Salinidad",
+                    parameterValue = lastSalinidad,
+                    range = salinidadRange,
+                    recommendation = viewModel.getRecommendation("Salinidad", lastSalinidad.toFloat(), salinidadRange.start.toFloat()..salinidadRange.endInclusive.toFloat()),
+                    unit = "mg/L",
+                    onShowGraph = { showSalinidadGraph.value = !showSalinidadGraph.value },
+                    isGraphVisible = showSalinidadGraph.value,
+                    measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.salinidad ?: 0) }
+                )
+            }
+            if (lastTds != null) {
+                ParameterStatusRow(
+                    parameterName = "TDS",
+                    parameterValue = lastTds,
+                    range = tdsRange,
+                    recommendation = viewModel.getRecommendation("TDS", lastTds.toFloat(), tdsRange.start.toFloat()..tdsRange.endInclusive.toFloat()),
+                    unit = "mg/L",
+                    onShowGraph = { showTdsGraph.value = !showTdsGraph.value },
+                    isGraphVisible = showTdsGraph.value,
+                    measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.tds ?: 0) }
+                )
+            }
         }
         Spacer(modifier = Modifier.height(14.dp))
         HorizontalDivider(
@@ -549,13 +708,18 @@ fun PlantTypeDetails(
         )
     }
 }
+
+
 @Composable
 fun ParameterStatusRow(
     parameterName: String,
     parameterValue: Int,
     range: IntRange,
     unit: String = "",
-    recommendation: String?
+    recommendation: String?,
+    onShowGraph: () -> Unit,
+    isGraphVisible: Boolean,
+    measurementData: List<Pair<String, Int>>
 ) {
     val isWithinRange = parameterValue in range
     val statusIcon = if (isWithinRange) {
@@ -563,11 +727,22 @@ fun ParameterStatusRow(
     } else {
         "❌" // Emoji for "out of range"
     }
+    val parameterIcon = getIconForParameter(parameterName)
+
     Column {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(vertical = 12.dp)
         ) {
+            Icon(
+                imageVector = parameterIcon,
+                contentDescription = "$parameterName Icon",
+                modifier = Modifier
+                    .size(32.dp)
+                    .padding(end = 8.dp),
+                tint = Color.Gray
+            )
+
             Text(
                 text = "$parameterName: ",
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
@@ -581,6 +756,17 @@ fun ParameterStatusRow(
                 text = statusIcon,
                 style = MaterialTheme.typography.bodyLarge
             )
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = onShowGraph,
+                modifier = Modifier.size(30.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_arrow),
+                    contentDescription = "Show Graph",
+                    modifier = Modifier.size(30.dp)
+                )
+            }
         }
         if (!isWithinRange && recommendation != null) {
             Card(
@@ -589,7 +775,7 @@ fun ParameterStatusRow(
                     .fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = Color(0xFFFFF3E0),
-                    ),
+                ),
                 border = BorderStroke(1.dp, Color(0xFFFFA500)),
             ) {
                 Row(
@@ -610,8 +796,28 @@ fun ParameterStatusRow(
                 }
             }
         }
+        if (isGraphVisible) {
+            Spacer(modifier = Modifier.height(16.dp))
+            MeasurementGraph(data = measurementData, title = parameterName)
+        }
     }
 }
+
+
+
+
+fun getIconForParameter(parameterName: String): ImageVector {
+    return when (parameterName) {
+        "Humedad Ambiente", "Humedad Suelo" -> Icons.Default.WaterDrop
+        "Temperatura" -> Icons.Default.Thermostat
+        "Luminosidad" -> Icons.Default.WbSunny
+        "Conductividad" -> Icons.Default.ElectricalServices
+        "pH" -> Icons.Default.Science
+        "Nitrógeno", "Fósforo", "Potasio", "Salinidad", "TDS" -> Icons.Default.Science
+        else -> Icons.Default.Info
+    }
+}
+
 
 @Composable
 fun MeasurementSection(
@@ -619,7 +825,15 @@ fun MeasurementSection(
     lastHumidityAmbiente: Int?,
     lastHumiditySuelo: Int?,
     lastTemperature: Float?,
-    lastLuminosidad: Float?
+    lastLuminosidad: Float?,
+    lastConductividad: Int?,
+    lastPh: Float?,
+    lastNitrogeno: Int?,
+    lastFosforo: Int?,
+    lastPotasio: Int?,
+    lastSalinidad: Int?,
+    lastTds: Int?,
+    sensorType: String
 ) {
     // Recuadro para humedad ambiente y gráfica
     Card(
@@ -724,10 +938,204 @@ fun MeasurementSection(
             }
         }
     }
+    if (sensorType == "Sensor PlantAura Pro") {
+        // Datos adicionales para el sensor Pro
+        if (lastConductividad != null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 10.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Conductividad: $lastConductividad µS/cm",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (measurementData.isNotEmpty()) {
+                        MeasurementGraph(measurementData.map { it.timestamp to (it.conductividad ?: 0) }, "Conductividad")
+                    } else {
+                        Text(text = "Cargando datos de conductividad...")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        if (lastPh != null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 10.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "pH: $lastPh",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (measurementData.isNotEmpty()) {
+                        MeasurementGraph(measurementData.map { it.timestamp to (it.ph?.toInt() ?: 0) }, "pH")
+                    } else {
+                        Text(text = "Cargando datos de pH...")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        if (lastNitrogeno != null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 10.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Nitrógeno: $lastNitrogeno mg/kg",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (measurementData.isNotEmpty()) {
+                        MeasurementGraph(measurementData.map { it.timestamp to (it.nitrogeno ?: 0) }, "Nitrógeno")
+                    } else {
+                        Text(text = "Cargando datos de nitrógeno...")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        if (lastFosforo != null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 10.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Fósforo: $lastFosforo mg/kg",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (measurementData.isNotEmpty()) {
+                        MeasurementGraph(measurementData.map { it.timestamp to (it.fosforo ?: 0) }, "Fósforo")
+                    } else {
+                        Text(text = "Cargando datos de fósforo...")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        if (lastPotasio != null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 10.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Potasio: $lastPotasio mg/kg",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (measurementData.isNotEmpty()) {
+                        MeasurementGraph(measurementData.map { it.timestamp to (it.potasio ?: 0) }, "Potasio")
+                    } else {
+                        Text(text = "Cargando datos de potasio...")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        if (lastSalinidad != null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 10.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Salinidad: $lastSalinidad mg/L",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (measurementData.isNotEmpty()) {
+                        MeasurementGraph(measurementData.map { it.timestamp to (it.salinidad ?: 0) }, "Salinidad")
+                    } else {
+                        Text(text = "Cargando datos de salinidad...")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        if (lastTds != null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 10.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "TDS: $lastTds mg/L",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (measurementData.isNotEmpty()) {
+                        MeasurementGraph(measurementData.map { it.timestamp to (it.tds ?: 0) }, "TDS")
+                    } else {
+                        Text(text = "Cargando datos de TDS...")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
 }
 
+
+
 @Composable
-fun MeasurementGraph(data: List<Pair<String, Int>>, title: String ) {
+fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
     // Formatear las fechas para mostrar solo la hora
     val dateFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
     val reversedData = data.asReversed()
@@ -784,7 +1192,7 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String ) {
                 clickedPoint.value = point
 
                 coroutineScope.launch {
-                    val result = snackbarHostState.showSnackbar(
+                    snackbarHostState.showSnackbar(
                         message = "Valor: ${point.y}",
                         duration = SnackbarDuration.Short
                     )

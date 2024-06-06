@@ -68,6 +68,9 @@ class PlantDetailsViewModel(
     private val _plantType = MutableStateFlow("")
     val plantType: StateFlow<String> = _plantType
 
+    private val _sensorType = MutableStateFlow("")
+    val sensorType: StateFlow<String> = _sensorType
+
     private val _measurementData = MutableStateFlow<List<MeasurementData>>(emptyList())
     val measurementData: StateFlow<List<MeasurementData>> = _measurementData
 
@@ -82,6 +85,27 @@ class PlantDetailsViewModel(
 
     private val _lastLuminosidad = MutableStateFlow<Float?>(null)
     val lastLuminosidad: StateFlow<Float?> = _lastLuminosidad
+
+    private val _lastConductividad = MutableStateFlow<Int?>(null)
+    val lastConductividad: StateFlow<Int?> = _lastConductividad
+
+    private val _lastPh = MutableStateFlow<Float?>(null)
+    val lastPh: StateFlow<Float?> = _lastPh
+
+    private val _lastNitrogeno = MutableStateFlow<Int?>(null)
+    val lastNitrogeno: StateFlow<Int?> = _lastNitrogeno
+
+    private val _lastFosforo = MutableStateFlow<Int?>(null)
+    val lastFosforo: StateFlow<Int?> = _lastFosforo
+
+    private val _lastPotasio = MutableStateFlow<Int?>(null)
+    val lastPotasio: StateFlow<Int?> = _lastPotasio
+
+    private val _lastSalinidad = MutableStateFlow<Int?>(null)
+    val lastSalinidad: StateFlow<Int?> = _lastSalinidad
+
+    private val _lastTds = MutableStateFlow<Int?>(null)
+    val lastTds: StateFlow<Int?> = _lastTds
 
     private val _plantTypeRanges = MutableStateFlow<PlantTypeRanges?>(null)
     val plantTypeRanges: StateFlow<PlantTypeRanges?> = _plantTypeRanges
@@ -294,6 +318,7 @@ class PlantDetailsViewModel(
                     Log.d("PlantDetailsViewModel", "Plant found: $plant")
                     _plantName.value = plant.name
                     _plantType.value = plant.plantType
+                    _sensorType.value = plant.sensorType
                     _plantId.value = plant.id // Guardar el plantId
                     fetchMeasurementData(plant.id)
                     fetchPlantTypeRanges(plant.plantType)
@@ -355,18 +380,25 @@ class PlantDetailsViewModel(
     private fun fetchMeasurementData(plantId: String) {
         viewModelScope.launch {
             try {
-                Log.d("PlantDetailsViewModel", "Fetching measurement data for plantId: $plantId")
                 val data = graphUseCase.getMeasurementData(plantId)
-                Log.d("PlantDetailsViewModel", "Original measurement data: $data")
+                Log.d("PlantDetailsViewModel", "Fetched measurement data: $data")
                 _measurementData.value = data
 
                 if (data.isNotEmpty()) {
                     val reversedData = data.asReversed()
-                    Log.d("PlantDetailsViewModel", "Reversed measurement data: $reversedData")
                     _lastHumidityAmbiente.value = reversedData.last().humedadAmbiente
                     _lastHumiditySuelo.value = reversedData.last().humedadSuelo
                     _lastTemperature.value = reversedData.last().temperatura
                     _lastLuminosidad.value = reversedData.last().luminosidad
+                    _lastConductividad.value = reversedData.last().conductividad
+                    _lastPh.value = reversedData.last().ph
+                    _lastNitrogeno.value = reversedData.last().nitrogeno
+                    _lastFosforo.value = reversedData.last().fosforo
+                    _lastPotasio.value = reversedData.last().potasio
+                    _lastSalinidad.value = reversedData.last().salinidad
+                    _lastTds.value = reversedData.last().tds
+
+                    Log.d("PlantDetailsViewModel", "Last values updated: HumAmb=${_lastHumidityAmbiente.value}, HumSuel=${_lastHumiditySuelo.value}, Temp=${_lastTemperature.value}, Lum=${_lastLuminosidad.value}, Cond=${_lastConductividad.value}, pH=${_lastPh.value}, N=${_lastNitrogeno.value}, P=${_lastFosforo.value}, K=${_lastPotasio.value}, Sal=${_lastSalinidad.value}, TDS=${_lastTds.value}")
                 }
             } catch (e: Exception) {
                 Log.e("PlantDetailsViewModel", "Error fetching measurement data: ${e.message}", e)
