@@ -30,7 +30,6 @@ class HomeViewModel(
 ) : AndroidViewModel(application) {
     private val _plantNames = MutableStateFlow<List<Plant>>(emptyList())
     val plantNames: StateFlow<List<Plant>> = _plantNames
-
     val imageDirectory = File(application.filesDir, "com.example.plantaura2.data.imagesPlants")
 
     init {

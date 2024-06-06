@@ -33,7 +33,7 @@ fun AppNavigation(
     settingsViewModel: SettingsViewModel
 ) {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Screen.Home.route) {
+    NavHost(navController = navController, startDestination = Screen.Login.route) {
         composable(Screen.Login.route) {
             LoginScreen(viewModel = loginViewModel, navController = navController)
         }

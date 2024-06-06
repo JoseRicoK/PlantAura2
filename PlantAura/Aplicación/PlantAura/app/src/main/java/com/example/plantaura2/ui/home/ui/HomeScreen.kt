@@ -24,7 +24,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Spa
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -62,12 +61,12 @@ fun HomeScreen(
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
-            viewModel.loadPlantNames() // Recarga los nombres de las plantas
+            viewModel.loadPlantNames()
         }
     }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize()
     ) {
         TopBar(navController = navController, onPlusSelected = { viewModel.onPlusSelected(navController) })
         BodyContent(
@@ -132,12 +131,12 @@ fun PlantItem(planta: Plant, imageDirectory: File, onClick: () -> Unit) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(100.dp) // Establecer una altura fija para el Row
-                .background(Color(0xFFF5F5F5)) // Color de fondo blanco roto
+                .height(100.dp)
+                .background(Color(0xFFF5F5F5))
         ) {
             Box(
                 modifier = Modifier
-                    .width(100.dp) // Establecer un ancho fijo para la imagen
+                    .width(100.dp)
                     .fillMaxHeight()
             ) {
                 if (planta.hasImage) {
@@ -149,16 +148,14 @@ fun PlantItem(planta: Plant, imageDirectory: File, onClick: () -> Unit) {
                         contentDescription = "Imagen de ${planta.name}",
                         modifier = Modifier
                             .fillMaxHeight()
-                            .width(100.dp), // Asegurar que la imagen tenga un ancho fijo
+                            .width(100.dp),
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    // Mostrar icono predeterminado
                     Icon(
                         imageVector = Icons.Filled.Spa,
                         contentDescription = "Planta",
                         modifier = Modifier
-                            //.size(60.dp) // Ajustar el tamaño del icono
                             .align(Alignment.Center)
                     )
                 }
@@ -167,9 +164,9 @@ fun PlantItem(planta: Plant, imageDirectory: File, onClick: () -> Unit) {
                         .matchParentSize()
                         .background(
                             Brush.horizontalGradient(
-                                colors = listOf(Color.Transparent, Color(0xFFF5F5F5)), // Degradado de transparente a blanco roto
+                                colors = listOf(Color.Transparent, Color(0xFFF5F5F5)),
                                 startX = 100f,
-                                endX = 280f // Ajustar para mover el final del gradiente
+                                endX = 280f
                             )
                         )
                 )
@@ -189,7 +186,7 @@ fun PlantItem(planta: Plant, imageDirectory: File, onClick: () -> Unit) {
                 )
             }
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward, // Flecha indicando que se puede pulsar
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = "Flecha indicando que se puede pulsar",
                 modifier = Modifier
                     //.size(24.dp)
@@ -199,15 +196,6 @@ fun PlantItem(planta: Plant, imageDirectory: File, onClick: () -> Unit) {
         }
     }
 }
-
-
-
-
-
-
-
-
-
 
 @Composable
 fun BottomNavigationBar(
@@ -221,7 +209,7 @@ fun BottomNavigationBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp), // Ajusta el padding para que 'flote'
+            .padding(16.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
         Card(
@@ -265,15 +253,15 @@ fun BottomNavigationBar(
     }
 }
 
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(navController: NavController, onPlusSelected: () -> Unit = {}) {
     TopAppBar(
         title = { Text(
             text = "Plantas",
-            fontWeight = FontWeight.Bold
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+//            modifier = Modifier.padding(16.dp)
         ) },
         actions = {
             IconButton(onClick = onPlusSelected ) {

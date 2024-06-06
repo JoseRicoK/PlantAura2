@@ -38,6 +38,7 @@ fun ProfileScreen(viewModel: ProfileViewModel, navController: NavController) {
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
         )
+        Spacer(modifier = Modifier.height(22.dp))
         userEmail?.let {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -118,7 +119,7 @@ fun ChangePasswordSection(newPassword: String, onPasswordChange: (String) -> Uni
                 .padding(vertical = 6.dp)
         ) {
             Text(
-                text = "Cambiar Contraseña",
+                text = "Confirmar Contraseña",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )

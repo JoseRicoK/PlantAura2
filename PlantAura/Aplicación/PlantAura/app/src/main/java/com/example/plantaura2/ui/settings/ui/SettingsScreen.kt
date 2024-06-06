@@ -32,7 +32,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel(), navController: Na
     val plants by viewModel.plants.collectAsState()
     var isTravelModeActive by remember { mutableStateOf(false) }
     var selectedTravelDays by remember { mutableStateOf("1 día de viaje") }
-    var selectedNotificationInterval by remember { mutableStateOf("Cada 1 minuto") }
+    var selectedNotificationInterval by remember { mutableStateOf("Cada 15 minutos") }
     var notificationSent by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -67,7 +67,6 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel(), navController: Na
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
             Button(
                 onClick = { isTravelModeActive = !isTravelModeActive },
                 colors = ButtonDefaults.buttonColors(
@@ -95,9 +94,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel(), navController: Na
 
                 DropDownMenu(
                     items = listOf(
-                        "Cada 1 minuto", "Cada 2 horas", "Cada 3 horas", "Cada 4 horas",
-                        "Cada 5 horas", "Cada 6 horas", "Cada 7 horas", "Cada 8 horas",
-                        "Cada 9 horas", "Cada 10 horas", "Cada 12 horas", "Cada 24 horas"
+                        "Cada 15 minutos", "Cada 30 minutos", "Cada 1 hora", "Cada 2 horas",
+                        "Cada 4 horas", "Cada 6 horas", "Cada 8 horas",
+                        "Cada 10 horas", "Cada 12 horas", "Cada 24 horas"
                     ),
                     label = "¿Cada cuánto tiempo quieres recibir una notificación?",
                     selectedItem = selectedNotificationInterval,
@@ -152,12 +151,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel(), navController: Na
     }
 }
 
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropDownMenu(items: List<String>, label: String, selectedItem: String, onItemSelected: (String) -> Unit) {
-    var selectedText by remember { mutableStateOf(items[0]) }
+    var selectedText by remember { mutableStateOf(selectedItem) }
     var isExpanded by remember { mutableStateOf(false) }
 
     Column(
@@ -202,15 +199,13 @@ fun DropDownMenu(items: List<String>, label: String, selectedItem: String, onIte
 
 fun calcularIntervalo(diasViajeSeleccionados: Int, intervaloNotificacionSeleccionado: String): Long {
     return when (intervaloNotificacionSeleccionado) {
-        "Cada 1 minuto" -> TimeUnit.SECONDS.toMillis(1)
+        "Cada 15 minutos" -> TimeUnit.MINUTES.toMillis(15)
+        "Cada 30 minutos" -> TimeUnit.MINUTES.toMillis(30)
+        "Cada 1 hora" -> TimeUnit.HOURS.toMillis(1)
         "Cada 2 horas" -> TimeUnit.HOURS.toMillis(2)
-        "Cada 3 horas" -> TimeUnit.HOURS.toMillis(3)
         "Cada 4 horas" -> TimeUnit.HOURS.toMillis(4)
-        "Cada 5 horas" -> TimeUnit.HOURS.toMillis(5)
         "Cada 6 horas" -> TimeUnit.HOURS.toMillis(6)
-        "Cada 7 horas" -> TimeUnit.HOURS.toMillis(7)
         "Cada 8 horas" -> TimeUnit.HOURS.toMillis(8)
-        "Cada 9 horas" -> TimeUnit.HOURS.toMillis(9)
         "Cada 10 horas" -> TimeUnit.HOURS.toMillis(10)
         "Cada 12 horas" -> TimeUnit.HOURS.toMillis(12)
         "Cada 24 horas" -> TimeUnit.HOURS.toMillis(24)
@@ -229,6 +224,7 @@ private fun scheduleNotification(intervalo: Long, context: Context) {
         notificationWorkRequest
     )
 }
+
 @Composable
 fun PlantList(plants: List<Plant>, onDeletePlant: (String) -> Unit) {
     LazyColumn {
@@ -240,6 +236,40 @@ fun PlantList(plants: List<Plant>, onDeletePlant: (String) -> Unit) {
 
 @Composable
 fun PlantItem(plant: Plant, onDeletePlant: () -> Unit) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(text = "Confirmación") },
+            text = { Text("¿Estás seguro de que quieres eliminarla? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                Button(
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    ),
+                    onClick = {
+                        onDeletePlant()
+                        showDialog = false
+                    }
+                ) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showDialog = false },
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color.Black
+                    )
+                ){
+                    Text("Denegar")
+                }
+            }
+        )
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -253,7 +283,7 @@ fun PlantItem(plant: Plant, onDeletePlant: () -> Unit) {
             modifier = Modifier.weight(1f)
         )
         Button(
-            onClick = onDeletePlant,
+            onClick = { showDialog = true },
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.error,
                 contentColor = MaterialTheme.colorScheme.onError
