@@ -32,7 +32,7 @@ import javax.jmdns.ServiceEvent
 import javax.jmdns.ServiceInfo
 import javax.jmdns.ServiceListener
 
-data class Sensor(val id: String, val ip: String, val humedad: Int, val nombre: String = "")
+data class Sensor(val id: String, val sensor: String)
 
 class SensorConnectionViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -172,6 +172,7 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
         suspend fun getData(): Response<Sensor>
     }
 
+
     private fun fetchMessageFromESP32(ipAddress: String) {
         viewModelScope.launch {
             val retrofit = Retrofit.Builder()
@@ -188,7 +189,8 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
                 if (response.isSuccessful) {
                     val sensorData = response.body()
                     if (sensorData != null) {
-                        val sensor = Sensor(sensorData.id, ipAddress, sensorData.humedad)
+                        // Crear el sensor usando el id y el sensor recibidos
+                        val sensor = Sensor(sensorData.id, sensorData.sensor)
                         _sensors.value = _sensors.value + sensor
 
                         currentSensorId = sensor.id
@@ -217,10 +219,16 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
     }
 
     fun saveSensorToFirebase(sensorId: String, name: String, plantType: String, onSuccess: () -> Unit) {
+        val sensor = _sensors.value.find { it.id == sensorId }
+        if (sensor == null) {
+            Log.e("saveSensorToFirebase", "Sensor with ID $sensorId not found")
+            return
+        }
         val sensorData = hashMapOf(
             "id" to sensorId,
             "name" to name,
             "plantType" to plantType,
+            "sensorType" to sensor.sensor,
             "revive" to false,
             "recommendations" to listOf(
                 "Elimina todos los tallos y hojas marchitas.",

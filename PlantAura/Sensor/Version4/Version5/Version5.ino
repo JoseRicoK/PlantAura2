@@ -7,22 +7,44 @@
 #include <ArduinoJson.h>
 #include <time.h>
 #include <DHT.h>
+#include <ModbusMaster.h>
 
-#define DHTPIN 4       // Pin donde está conectado el DHT11
-#define DHTTYPE DHT11  // Definición del tipo de sensor DHT
+// Definir pines para RE y DE del módulo RS485
+#define RE_DE 4
+
+// Instancia de ModbusMaster
+ModbusMaster sensor;
+
+void preTransmission() {
+  digitalWrite(RE_DE, 1);
+}
+
+void postTransmission() {
+  digitalWrite(RE_DE, 0);
+}
+
+// Pines y configuración de sensores
+#define DHTPIN 14       // Pin donde está conectado el DHT11
+#define DHTTYPE DHT11   // Definición del tipo de sensor DHT
 DHT dht(DHTPIN, DHTTYPE);
-#define HUMEDAD_SUELO_PIN 36  // Pin analógico para el sensor de humedad del suelo
 #define SENSOR_LUZ_PIN 34  // Pin analógico para el sensor de luz
+
+// Variables para almacenar las mediciones del sensor Modbus
+float humedadModbus, temperaturaSuelo, ph;
+int conductividad, nitrogeno, fosforo, potasio, salinidad, tds;
+
+// Variables para almacenar las mediciones del DHT11 y el sensor de luz
+float temperatura, humedadAmbiente, luminosidad;
 
 // Reemplaza con tus credenciales de Firebase
 #define FIREBASE_PROJECT_ID "plantaura2"
 
 // Dividir el access token en partes
-const char REFRESH_TOKEN_PART1[] PROGMEM = "AMf-vBwZAqDlR-X0O8IN6Vb_wWR2gFvrQwcImxdwMtlwQ-OZK1kVEbmopuC0rek-3MG8k";
-const char REFRESH_TOKEN_PART2[] PROGMEM = "tKv2uDP7Hy8hOXaEF4_hA2jLWtNi6U5_nmX4p1fM0";
-const char REFRESH_TOKEN_PART3[] PROGMEM = "nTVM4aYU_uBjbdk98tBpsM2MLLpQ4DmYmOn5tUr";
-const char REFRESH_TOKEN_PART4[] PROGMEM = "Guh9QV1DJunt_dAQymkmHRqU5OItDBVz4Gd";
-const char REFRESH_TOKEN_PART5[] PROGMEM = "EMu1ClicMYEeAhjZ25Ef";
+const char REFRESH_TOKEN_PART1[] PROGMEM = "AMf-vBz1SHrujat2MMLvTDXEdgsnZyPNzI7DX_RRne1HCC-HiPLvgZisv_VpjLFQh2uam8qw247xiAgPYFSIugpVI6emBzIGDHqfLfvmGPreUTEUCv7dKQuEU99m-RgnA9c";
+const char REFRESH_TOKEN_PART2[] PROGMEM = "X49UmIO-R6sQIZP_juBw_9efcl7IuzM289fGxSLHKFsOAjE6gs";
+const char REFRESH_TOKEN_PART3[] PROGMEM = "jTH_I-5wKY8g6BzXEEKaG";
+const char REFRESH_TOKEN_PART4[] PROGMEM = "tvZrd0XnDYY";
+const char REFRESH_TOKEN_PART5[] PROGMEM = "k-UKwI7VIYNeA";
 
 // API key de Firebase
 #define API_KEY "AIzaSyANGl-rSnDDis83bI0Wkf-5sc6_pua7NMQ"
@@ -41,14 +63,22 @@ void saveConfigCallback();
 
 bool shouldSaveConfig = false;
 unsigned long lastSendTime = 0;
-const unsigned long sendInterval = 600000; // 10 minutos en milisegundos
+const unsigned long sendInterval = 60000; // 10 minutos en milisegundos
 
 void setup() {
   Serial.begin(115200);
   
+  // Inicializar Modbus
+  Serial1.begin(4800, SERIAL_8N1, 16, 17); // Ajusta los pines TX=17 y RX=16 según tu conexión
+  pinMode(RE_DE, OUTPUT);
+  digitalWrite(RE_DE, 0);
+
+  sensor.begin(1, Serial1);  // 1 es la dirección del esclavo
+  sensor.preTransmission(preTransmission);
+  sensor.postTransmission(postTransmission);
+
   // Inicializar sensores
   dht.begin();
-  pinMode(HUMEDAD_SUELO_PIN, INPUT);
   pinMode(SENSOR_LUZ_PIN, INPUT);
 
   WiFiManager wifiManager;
@@ -104,6 +134,32 @@ void loop() {
     shouldSaveConfig = false;
   }
 
+  // Leer datos del sensor Modbus
+  uint8_t result = sensor.readHoldingRegisters(0x0000, 9);
+  if (result == sensor.ku8MBSuccess) {
+    humedadModbus = sensor.getResponseBuffer(0) / 10.0;
+    temperaturaSuelo = sensor.getResponseBuffer(1) / 10.0;
+    conductividad = sensor.getResponseBuffer(2);
+    ph = sensor.getResponseBuffer(3) / 10.0;
+    nitrogeno = sensor.getResponseBuffer(4);
+    fosforo = sensor.getResponseBuffer(5);
+    potasio = sensor.getResponseBuffer(6);
+    salinidad = sensor.getResponseBuffer(7);
+    tds = sensor.getResponseBuffer(8);
+  } else {
+    Serial.print("Error en la comunicación Modbus. Código: ");
+    Serial.println(result);
+  }
+
+  // Leer datos del sensor DHT11 y el sensor de luz
+  temperatura = dht.readTemperature();
+  humedadAmbiente = dht.readHumidity();
+
+  int sensorLuzRaw = analogRead(SENSOR_LUZ_PIN);
+  sensorLuzRaw = 4095 - sensorLuzRaw; // Invertir los valores del sensor de luz
+  float voltajeLuz = (sensorLuzRaw / 4095.0) * 3.3;  // Convertir el valor ADC a voltaje
+  luminosidad = (voltajeLuz / 1.0) * 100;  // Asumir que 3.3V = 100%, ajustar según el sensor
+
   unsigned long currentTime = millis();
   if (currentTime - lastSendTime >= sendInterval) {
     Serial.println("Enviando datos a Firestore...");
@@ -122,32 +178,11 @@ void handleRoot() {
 
 void handleData() {
   Serial.println("Petición recibida en la ruta /data");
-  
-  // Leer datos de los sensores
-  float temperatura = dht.readTemperature();
-  float humedadAmbiente = dht.readHumidity();
-  int humedadSueloRaw = analogRead(HUMEDAD_SUELO_PIN);
-  float humedadSuelo = map(humedadSueloRaw, 0, 4095, 100, 0); // Invertir valores al convertir a porcentaje
 
-  int sensorLuzRaw = analogRead(SENSOR_LUZ_PIN);
-  sensorLuzRaw = 4095 - sensorLuzRaw; // Invertir los valores del sensor de luz
-  float voltajeLuz = (sensorLuzRaw / 4095.0) * 3.3;  // Convertir el valor ADC a voltaje
-  float luminosidad = (voltajeLuz / 1.0) * 100;  // Asumir que 1V = 100 lux, ajustar según el sensor
-
-  // Verificar si las lecturas son válidas
-  if (isnan(temperatura) || isnan(humedadAmbiente) || isnan(humedadSuelo) || isnan(luminosidad)) {
-    Serial.println("Error al leer los datos de los sensores");
-    server.send(500, "application/json", "{\"error\":\"Error al leer los datos de los sensores\"}");
-    return;
-  }
-
-  // Crear el objeto JSON con los datos de los sensores y la dirección MAC
+  // Crear el objeto JSON con el ID y el nombre del sensor
   DynamicJsonDocument doc(1024);
   doc["id"] = getDeviceID();
-  doc["temperatura"] = temperatura;
-  doc["humedadAmbiente"] = humedadAmbiente;
-  doc["humedadSuelo"] = humedadSuelo;
-  doc["luminosidad"] = luminosidad;
+  doc["sensor"] = "Sensor PlantAura Pro";
 
   String jsonResponse;
   serializeJson(doc, jsonResponse);
@@ -237,22 +272,8 @@ void sendDataToFirestore() {
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Authorization", "Bearer " + accessToken);
 
-  // Leer datos del sensor DHT11
-  float temperatura = dht.readTemperature();
-  float humedadAmbiente = dht.readHumidity();
-
-  // Leer datos del sensor de humedad del suelo
-  int humedadSueloRaw = analogRead(HUMEDAD_SUELO_PIN);
-  float humedadSuelo = map(humedadSueloRaw, 0, 4095, 100, 0); // Invertir valores al convertir a porcentaje
-
-  // Leer datos del sensor de luz
-  int sensorLuzRaw = analogRead(SENSOR_LUZ_PIN);
-  sensorLuzRaw = 4095 - sensorLuzRaw; // Invertir los valores del sensor de luz
-  float voltajeLuz = (sensorLuzRaw / 4095.0) * 3.3;  // Convertir el valor ADC a voltaje
-  float luminosidad = (voltajeLuz / 1.0) * 100;  // Asumir que 1V = 100 lux, ajustar según el sensor
-
   // Verificar si las lecturas son válidas
-  if (isnan(temperatura) || isnan(humedadAmbiente) || isnan(humedadSuelo) || isnan(luminosidad)) {
+  if (isnan(temperatura) || isnan(humedadAmbiente) || isnan(luminosidad)) {
     Serial.println("Error al leer los datos de los sensores");
     return;
   }
@@ -265,12 +286,28 @@ void sendDataToFirestore() {
   timestampObj["stringValue"] = timestamp;
   JsonObject temperaturaObj = fields.createNestedObject("temperatura");
   temperaturaObj["doubleValue"] = round(temperatura * 100.0) / 100.0;
+  JsonObject temperaturaSueloObj = fields.createNestedObject("temperaturaSuelo");
+  temperaturaSueloObj["doubleValue"] = round(temperaturaSuelo * 100.0) / 100.0;
   JsonObject humedadAmbienteObj = fields.createNestedObject("humedadAmbiente");
   humedadAmbienteObj["doubleValue"] = round(humedadAmbiente * 100.0) / 100.0;
   JsonObject humedadSueloObj = fields.createNestedObject("humedadSuelo");
-  humedadSueloObj["doubleValue"] = round(humedadSuelo * 100.0) / 100.0;
+  humedadSueloObj["doubleValue"] = round(humedadModbus * 100.0) / 100.0;
   JsonObject luminosidadObj = fields.createNestedObject("luminosidad");
   luminosidadObj["doubleValue"] = round(luminosidad * 100.0) / 100.0;
+  JsonObject conductividadObj = fields.createNestedObject("conductividad");
+  conductividadObj["doubleValue"] = conductividad;
+  JsonObject phObj = fields.createNestedObject("ph");
+  phObj["doubleValue"] = round(ph * 100.0) / 100.0;
+  JsonObject nitrogenoObj = fields.createNestedObject("nitrogeno");
+  nitrogenoObj["doubleValue"] = nitrogeno;
+  JsonObject fosforoObj = fields.createNestedObject("fosforo");
+  fosforoObj["doubleValue"] = fosforo;
+  JsonObject potasioObj = fields.createNestedObject("potasio");
+  potasioObj["doubleValue"] = potasio;
+  JsonObject salinidadObj = fields.createNestedObject("salinidad");
+  salinidadObj["doubleValue"] = salinidad;
+  JsonObject tdsObj = fields.createNestedObject("tds");
+  tdsObj["doubleValue"] = tds;
 
   String payload;
   serializeJson(doc, payload);
