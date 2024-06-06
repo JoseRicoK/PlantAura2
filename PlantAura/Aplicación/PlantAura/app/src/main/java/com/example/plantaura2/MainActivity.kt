@@ -98,17 +98,13 @@ class MainActivity : ComponentActivity() {
                 Log.e("MainActivity", "El resultado de la cámara no fue OK")
             }
         }
-        // El resto de tu código de configuración
-
-
-
 
     // Registro del ActivityResultLauncher para permisos
         requestPermissionLauncher =
             registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
                 val granted = permissions.entries.all { it.value }
                 if (!granted) {
-                    // Algunos permisos no han sido concedidos. Aquí puedes manejar este caso.
+                    // ESTO EN CASO DE NO TENER PERMISOS
                 }
             }
 
@@ -225,8 +221,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
-
     fun createSimpleNotification(context: Context) {
         val channelId = "MY_CHANNEL_ID"
         val notificationId = 1
@@ -246,8 +240,6 @@ class MainActivity : ComponentActivity() {
         }
 
         val intent = Intent(context, MainActivity::class.java)
-
-
         val pendingIntent: PendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         // Construir la notificación

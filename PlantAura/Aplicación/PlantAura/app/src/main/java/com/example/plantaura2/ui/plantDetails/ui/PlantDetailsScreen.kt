@@ -202,7 +202,7 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                     salinidadRange = plantTypeRanges?.salinidadMin?.let { min -> plantTypeRanges?.salinidadMax?.let { max -> min..max } } ?: 0..100,
                     tdsRange = plantTypeRanges?.tdsMin?.let { min -> plantTypeRanges?.tdsMax?.let { max -> min..max } } ?: 0..100,
                     viewModel = viewModel,
-                    sensorType = sensorType // Añadir esta línea
+                    sensorType = sensorType
                 )
             } else {
                 Text(
@@ -211,19 +211,13 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
-
-            //Spacer(modifier = Modifier.height(8.dp))
-
             PredictHealthSection(viewModel = viewModel)
-
             Spacer(modifier = Modifier.height(10.dp))
-
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 thickness = 0.7.dp,
                 color = Color.Gray
             )
-
             Spacer(modifier = Modifier.height(24.dp))
 
             // Botón "Revive"
@@ -237,7 +231,6 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
                         if (plantId != null) {
                             viewModel.toggleRevive(plantId!!, revive)
                             if (!revive) {
-                                // Mostrar el diálogo solo si se está activando el modo revive
                                 setShowDialog(true)
                             }
                         }
@@ -251,10 +244,6 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         }
     }
 }
-
-
-
-
 
 @Composable
 fun AnimatedBorderContainer(viewModel: PlantDetailsViewModel) {
@@ -477,12 +466,6 @@ fun EmbeddedElements(
 }
 
 @Composable
-@Preview(showBackground = true)
-fun CustomComponentPreview() {
-    CustomComponent()
-}
-
-@Composable
 fun PredictHealthSection(viewModel: PlantDetailsViewModel) {
     Column(
         modifier = Modifier
@@ -702,7 +685,6 @@ fun PlantTypeDetails(
     }
 }
 
-
 @Composable
 fun ParameterStatusRow(
     parameterName: String,
@@ -716,9 +698,9 @@ fun ParameterStatusRow(
 ) {
     val isWithinRange = parameterValue in range
     val statusIcon = if (isWithinRange) {
-        "✅" // Emoji for "within range"
+        "✅"
     } else {
-        "❌" // Emoji for "out of range"
+        "❌"
     }
     val parameterIcon = getIconForParameter(parameterName)
 
@@ -778,7 +760,7 @@ fun ParameterStatusRow(
                     Icon(
                         imageVector = Icons.Default.Warning,
                         contentDescription = "Warning",
-                        tint = Color(0xFFFFA500), // Orange color for the icon
+                        tint = Color(0xFFFFA500),
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     Text(
@@ -796,9 +778,6 @@ fun ParameterStatusRow(
     }
 }
 
-
-
-
 fun getIconForParameter(parameterName: String): ImageVector {
     return when (parameterName) {
         "Humedad Ambiente", "Humedad Suelo" -> Icons.Default.WaterDrop
@@ -811,11 +790,8 @@ fun getIconForParameter(parameterName: String): ImageVector {
     }
 }
 
-
-
 @Composable
 fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
-    // Formatear las fechas para mostrar solo la hora
     val dateFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
     val reversedData = data.asReversed()
     val xAxisData = reversedData.mapIndexed { index, dataPoint ->
@@ -826,21 +802,18 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
         }
     }
     val yAxisData = reversedData.map { it.second.toFloat() }
+    val darkGreen = Color(0xFF006400)
 
-    val darkGreen = Color(0xFF006400) // Definimos un color verde oscuro
-
-    // Obtener los valores mínimo y máximo de Y
     val minY = yAxisData.minOrNull() ?: 0f
     val maxY = yAxisData.maxOrNull() ?: 100f
 
-    // Crear etiquetas personalizadas para el eje Y
     val yAxisLabels = (0..10).map { (minY + it * (maxY - minY) / 10).roundToInt().toString() }
 
     val style = LineGraphStyle(
         colors = LineGraphColors(
             lineColor = darkGreen,
-            pointColor = Color.Transparent, // Hacemos los puntos transparentes
-            clickHighlightColor = darkGreen, // Resaltamos el punto seleccionado
+            pointColor = Color.Transparent,
+            clickHighlightColor = darkGreen,
             crossHairColor = Color.Gray,
             fillType = LineGraphFillType.Gradient(Brush.verticalGradient(
                 colors = listOf(darkGreen.copy(alpha = 0.4f), Color.Transparent)
@@ -861,7 +834,7 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp) // Ajustar la altura del contenedor
+            .height(200.dp)
     ) {
         LineGraph(
             modifier = Modifier.fillMaxSize(),

@@ -32,7 +32,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -40,10 +39,6 @@ import com.example.plantaura2.R
 import com.example.plantaura2.ui.theme.*
 import kotlinx.coroutines.launch
 
-/**
- * Pantalla de inicio de sesión
- * @param viewModel ViewModel asociado a la pantalla de inicio de sesión
- */
 @Composable
 fun LoginScreen(viewModel: LoginViewModel, navController: NavController) {
     Box(
@@ -55,11 +50,6 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController) {
     }
 }
 
-/**
- * Componente de inicio de sesión
- * @param modifier Modificador para aplicar al componente
- * @param viewModel ViewModel asociado a la pantalla de inicio de sesión
- */
 @Composable
 fun Login(modifier: Modifier, viewModel: LoginViewModel, navController: NavController) {
     val email: String by viewModel.email.observeAsState(initial = "")
@@ -122,11 +112,6 @@ fun Login(modifier: Modifier, viewModel: LoginViewModel, navController: NavContr
     }
 }
 
-
-/**
- * Botón de registro
- * @param onSignUpSelected Acción a realizar cuando se selecciona el botón de registro
- */
 @Composable
 fun SignUpButton(onSignUpSelected: () -> Unit, navController: NavController) {
     Button(
@@ -135,12 +120,12 @@ fun SignUpButton(onSignUpSelected: () -> Unit, navController: NavController) {
             .width(150.dp)
             .height(50.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0x236200EE), // Un color diferente para el botón de Sign Up
+            containerColor = Color(0x236200EE),
             contentColor = White
         )
     ) {
         Text(
-            text = "Sign Up",
+            text = "Crear cuenta",
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             color = White,
@@ -149,11 +134,6 @@ fun SignUpButton(onSignUpSelected: () -> Unit, navController: NavController) {
     }
 }
 
-/**
- * Botón de inicio de sesión
- * @param loginEnable Indica si el botón de inicio de sesión está habilitado
- * @param onLoginSelected Acción a realizar cuando se selecciona el botón de inicio de sesión
- */
 @Composable
 fun LoginButton(loginEnable: Boolean, onLoginSelected: () -> Unit) {
     Button(
@@ -168,7 +148,7 @@ fun LoginButton(loginEnable: Boolean, onLoginSelected: () -> Unit) {
         ), enabled = loginEnable
     ) {
         Text(
-            text = "Login",
+            text = "Iniciar sesión",
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             color = White,
@@ -180,14 +160,10 @@ fun LoginButton(loginEnable: Boolean, onLoginSelected: () -> Unit) {
     }
 }
 
-/**
- * Texto de "Olvidó su contraseña"
- * @param modifier Modificador para aplicar al texto
- */
 @Composable
 fun ForgotPasswordText(modifier: Modifier, onForgotPasswordSelected: () -> Unit) {
     Text(
-        text = "Forgot Password?",
+        text = "¿Has olvidado tu contraseña?",
         modifier = modifier.clickable { onForgotPasswordSelected() },
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
@@ -195,18 +171,13 @@ fun ForgotPasswordText(modifier: Modifier, onForgotPasswordSelected: () -> Unit)
     )
 }
 
-/**
- * Campo de texto para la contraseña
- * @param password Contraseña actual
- * @param onTextFieldChanged Acción a realizar cuando cambia el texto del campo
- */
 @Composable
 fun PasswordField(password: String, onTextFieldChanged: (String) -> Unit) {
     TextField(
         value = password,
         onValueChange = { onTextFieldChanged(it) },
         modifier = Modifier.fillMaxWidth(),
-        placeholder = { Text(text = "Password") },
+        placeholder = { Text(text = "Contraseña") },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         visualTransformation = PasswordVisualTransformation(),
@@ -214,11 +185,6 @@ fun PasswordField(password: String, onTextFieldChanged: (String) -> Unit) {
     )
 }
 
-/**
- * Campo de texto para el correo electrónico
- * @param email Correo electrónico actual
- * @param onTextFieldChanged Acción a realizar cuando cambia el texto del campo
- */
 @Composable
 fun EmailField(email: String, onTextFieldChanged: (String) -> Unit) {
     TextField(
@@ -231,10 +197,6 @@ fun EmailField(email: String, onTextFieldChanged: (String) -> Unit) {
     )
 }
 
-/**
- * Imagen de encabezado
- * @param modifier Modificador para aplicar a la imagen
- */
 @Composable
 fun HeaderImage(modifier: Modifier) {
     Image(
@@ -245,13 +207,3 @@ fun HeaderImage(modifier: Modifier) {
             .aspectRatio(1f)
     )
 }
-
-/*
-@Preview(showBackground = true)
-@Composable
-fun PreviewLoginScreen() {
-    PlantAura2Theme {
-        LoginScreen(viewModel = LoginViewModel())
-    }
-}
-*/

@@ -27,7 +27,7 @@ fun SignUpScreen(viewModel: SignUpViewModel, navController: NavController) {
     LaunchedEffect(navigation) {
         if (navigation != null) {
             navController.navigate(navigation!!)
-            viewModel.onNavigationHandled() // Reset navigation state after handling it
+            viewModel.onNavigationHandled()
         }
     }
 
@@ -90,7 +90,7 @@ fun PasswordField(password: String, onPasswordChanged: (String) -> Unit) {
         value = password,
         onValueChange = onPasswordChanged,
         modifier = Modifier.fillMaxWidth(),
-        placeholder = { Text(text = "Password") },
+        placeholder = { Text(text = "Contraseña") },
         singleLine = true,
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
@@ -103,7 +103,7 @@ fun ConfirmPasswordField(confirmPassword: String, onConfirmPasswordChanged: (Str
         value = confirmPassword,
         onValueChange = onConfirmPasswordChanged,
         modifier = Modifier.fillMaxWidth(),
-        placeholder = { Text(text = "Confirm Password") },
+        placeholder = { Text(text = "Confirmar contraseña") },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
     )
@@ -123,7 +123,7 @@ fun SignUpButton(signUpEnable: Boolean, onSignUpSelected: () -> Unit) {
         enabled = signUpEnable
     ) {
         Text(
-            text = "Sign Up",
+            text = "Crear cuenta",
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center

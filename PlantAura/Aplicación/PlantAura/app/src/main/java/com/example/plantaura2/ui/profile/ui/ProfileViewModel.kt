@@ -8,13 +8,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
-import com.example.plantaura2.domain.usecase.DeletePlantUseCase
 import com.example.plantaura2.domain.usecase.ChangePasswordUseCase
-import com.example.plantaura2.domain.usecase.GetPlantsUseCase
-import com.example.plantaura2.domain.model.Plant
 import com.example.plantaura2.domain.usecase.GetUserEmailUseCase
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 
 class ProfileViewModel(
     private val changePasswordUseCase: ChangePasswordUseCase,

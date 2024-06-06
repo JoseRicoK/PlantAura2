@@ -95,8 +95,6 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
         }
     }
 
-
-    // Verifica si el dispositivo está conectado a WiFi
     private fun isConnectedToWiFi(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
@@ -104,7 +102,6 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
         return networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
     }
 
-    // Descubre el ESP32 utilizando mDNS
     fun discoverESP32(context: Context) {
         if (!isConnectedToWiFi(context)) {
             Log.e("SensorConnectionViewModel", "El dispositivo no está conectado a WiFi")
@@ -133,7 +130,7 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
                     }
 
                     override fun serviceRemoved(event: ServiceEvent) {
-                        // Handle service removal if needed
+
                     }
 
                     override fun serviceResolved(event: ServiceEvent) {
@@ -237,14 +234,13 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
                 "Sécalo un poco y ponlo en tierra nueva.",
                 "Coloca la planta en un sitio iluminado."
             )
-            // Agrega otros campos que desees guardar
         )
 
         viewModelScope.launch {
             try {
                 firestore.collection("Plantas").document(sensorId).set(sensorData).await()
                 Log.d("SensorConnectionViewModel", "Sensor guardado en Firebase con éxito")
-                onSuccess() // Navegar a la pantalla de detalles después de guardar
+                onSuccess()
             } catch (e: Exception) {
                 Log.e("SensorConnectionViewModel", "Error guardando el sensor: ${e.message}")
             }
@@ -253,7 +249,6 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
 
 }
 
-// Factory para el ViewModel
 class SensorConnectionViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SensorConnectionViewModel::class.java)) {

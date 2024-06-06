@@ -11,18 +11,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import androidx.work.*
 import com.example.plantaura2.MainActivity
 import com.example.plantaura2.domain.model.Plant
 import com.example.plantaura2.domain.usecase.NotificationWorker
 import com.example.plantaura2.ui.home.ui.BottomNavigationBar
-import com.example.plantaura2.ui.theme.PlantAura2Theme
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
@@ -36,7 +33,6 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel(), navController: Na
     var notificationSent by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    // Estado del Snackbar
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -57,7 +53,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel(), navController: Na
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)  // Add additional padding if needed
+                .padding(16.dp)
         ) {
             Text(
                 text = "Ajustes",
@@ -291,14 +287,5 @@ fun PlantItem(plant: Plant, onDeletePlant: () -> Unit) {
         ) {
             Text("Borrar")
         }
-    }
-}
-
-@Preview
-@Composable
-fun SettingsScreenPreview() {
-    PlantAura2Theme {
-        val navController = rememberNavController()
-        SettingsScreen(navController = navController)
     }
 }

@@ -3,7 +3,6 @@ package com.example.plantaura2.ui.plantDetails.ui
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -16,48 +15,25 @@ import com.example.plantaura2.domain.model.PlantTypeRanges
 import com.example.plantaura2.domain.usecase.GetPlantTypeByNameUseCase
 import com.example.plantaura2.domain.usecase.GetPlantTypeRangesUseCase
 import com.example.plantaura2.domain.usecase.GraphUseCase
-import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.FormBody
-import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
-import okhttp3.Response
-import org.apache.commons.math3.linear.Array2DRowRealMatrix
-import org.apache.commons.math3.linear.RealMatrix
 import org.json.JSONArray
 import org.json.JSONObject
-import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.support.common.FileUtil
 import java.io.BufferedReader
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.ObjectInputStream
-import java.io.Serializable
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
-import kotlin.math.roundToInt
 
 
 class PlantDetailsViewModel(
     private val plantNameInput: String,
     private val graphUseCase: GraphUseCase,
-    private val getPlantTypeByNameUseCase: GetPlantTypeByNameUseCase,
     private val getPlantTypeRangesUseCase: GetPlantTypeRangesUseCase,
     application: Application
 ) : AndroidViewModel(application) {
@@ -136,11 +112,6 @@ class PlantDetailsViewModel(
 
     }
 
-
-
-
-
-    // Prediccion de la salud de la planta
     private fun loadScaler(sensorType: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -167,10 +138,6 @@ class PlantDetailsViewModel(
             }
         }
     }
-
-
-
-
 
     private fun JSONArray.toDoubleArray(): DoubleArray {
         val array = DoubleArray(this.length())
@@ -225,8 +192,6 @@ class PlantDetailsViewModel(
         }
     }
 
-
-
     private suspend fun predictSaludOnCloud(scaledData: Array<FloatArray>, endpointID: String): JSONObject? {
         return withContext(Dispatchers.IO) {
             try {
@@ -268,10 +233,6 @@ class PlantDetailsViewModel(
         }
     }
 
-
-
-
-    // Recomendaciones
     private fun fetchRecommendations(plantId: String) {
         viewModelScope.launch {
             try {
@@ -331,9 +292,6 @@ class PlantDetailsViewModel(
         }
     }
 
-
-
-    // Detalles de la planta
     private fun fetchPlantDetails() {
         viewModelScope.launch {
             try {
@@ -397,7 +355,6 @@ class PlantDetailsViewModel(
                 _revive.value = newReviveState
 
                 if (!newReviveState) {
-                    // Si se desactiva el modo revive, limpiar las recomendaciones ocultas
                     _hiddenRecommendations.value = emptySet()
                     FirebaseFirestore.getInstance()
                         .collection("Plantas")
@@ -459,8 +416,6 @@ class PlantDetailsViewModel(
 
 }
 
-
-
 class PlantDetailsViewModelFactory(
     private val plantNameInput: String,
     private val graphUseCase: GraphUseCase,
@@ -474,7 +429,6 @@ class PlantDetailsViewModelFactory(
             return PlantDetailsViewModel(
                 plantNameInput,
                 graphUseCase,
-                getPlantTypeByNameUseCase,
                 getPlantTypeRangesUseCase,
                 application
             ) as T
@@ -483,8 +437,6 @@ class PlantDetailsViewModelFactory(
     }
 }
 
-
-// Clase para escalar los datos de entrada
 data class MinMaxScaler(
     val scale: DoubleArray,
     val min: DoubleArray,
@@ -500,13 +452,9 @@ data class MinMaxScaler(
                     ((value - dataMin[index]) / dataRange[index]).toFloat()
                 } else {
                     Log.e("MinMaxScaler", "Index $index out of bounds for dataMin size ${dataMin.size}")
-                    value // Devuelve el valor sin escalar si el índice está fuera de los límites
+                    value
                 }
             }.toFloatArray()
         }.toTypedArray()
     }
 }
-
-
-
-

@@ -189,7 +189,6 @@ fun PlantItem(planta: Plant, imageDirectory: File, onClick: () -> Unit) {
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = "Flecha indicando que se puede pulsar",
                 modifier = Modifier
-                    //.size(24.dp)
                     .align(Alignment.CenterVertically)
                     .padding(end = 16.dp)
             )
@@ -261,7 +260,6 @@ fun TopBar(navController: NavController, onPlusSelected: () -> Unit = {}) {
             text = "Plantas",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-//            modifier = Modifier.padding(16.dp)
         ) },
         actions = {
             IconButton(onClick = onPlusSelected ) {

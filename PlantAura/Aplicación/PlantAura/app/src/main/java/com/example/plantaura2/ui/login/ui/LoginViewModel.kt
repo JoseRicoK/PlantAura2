@@ -52,7 +52,6 @@ class LoginViewModel(private val authUseCase: AuthUseCase) : ViewModel() {
                 navigateToHome(navController)
 
             }.onFailure { exception ->
-                Log.d("MascotaFeliz", "signInWithEmail: ${exception.message}")
                 _errorMessage.value = "Error: ${exception.message}"
             }
         }
@@ -72,13 +71,13 @@ class LoginViewModel(private val authUseCase: AuthUseCase) : ViewModel() {
     fun onForgotPasswordSelected() {
         val email = _email.value
         if (email.isNullOrEmpty()) {
-            _resetPasswordMessage.value = "Please enter your email address"
+            _resetPasswordMessage.value = "Por favor introduce un email"
             return
         }
         FirebaseAuth.getInstance().sendPasswordResetEmail(email)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    _resetPasswordMessage.value = "Password reset email sent"
+                    _resetPasswordMessage.value = "Email para resetear la contraseña enviado"
                 } else {
                     _resetPasswordMessage.value = "Error: ${task.exception?.message}"
                 }
@@ -94,30 +93,3 @@ class LoginViewModelFactory(private val authUseCase: AuthUseCase) : ViewModelPro
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
-
-/**
- * ViewModel for the login screen
-
-class LoginViewModel: ViewModel(){
-private val auth: FirebaseAuth = Firebase.auth
-private val _loading = MutableLiveData(false)
-
-fun signInWithEmailAndPassword(email: String, password: String, home: () -> Unit)
-= viewModelScope.launch{
-try {
-auth.signInWithEmailAndPassword(email, password)
-.addOnCompleteListener { task->
-if (task.isSuccessful){
-Log.d("MascotaFeliz", "signInWithEmail logueado")
-home()
-}
-else{
-Log.d("MascotaFeliz", "signInWithEmail: ${task.result.toString()}")
-}
-}
-} catch (ex: Exception){
-Log.d("MascotaFeliz", "signInWithEmail: ${ex.message}")
-}
-}
-
-}*/

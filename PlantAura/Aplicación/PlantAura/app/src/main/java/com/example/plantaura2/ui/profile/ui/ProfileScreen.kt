@@ -23,7 +23,6 @@ fun ProfileScreen(viewModel: ProfileViewModel, navController: NavController) {
     var newPassword by remember { mutableStateOf("") }
     val passwordChangeMessage: String? by viewModel.passwordChangeMessage.observeAsState()
 
-    // Estado del Snackbar
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -82,7 +81,6 @@ fun ProfileScreen(viewModel: ProfileViewModel, navController: NavController) {
         }
     }
 
-    // Colocamos el SnackbarHost en la raíz del Composable
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
