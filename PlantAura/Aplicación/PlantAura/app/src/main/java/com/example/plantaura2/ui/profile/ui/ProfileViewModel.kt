@@ -17,13 +17,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class ProfileViewModel(
-    private val deletePlantUseCase: DeletePlantUseCase,
-    private val getPlantsUseCase: GetPlantsUseCase,
     private val changePasswordUseCase: ChangePasswordUseCase,
     private val getUserEmailUseCase: GetUserEmailUseCase
 ) : ViewModel() {
-    private val _plants = MutableStateFlow<List<Plant>>(emptyList())
-    val plants: StateFlow<List<Plant>> = _plants
 
     private val _passwordChangeMessage = MutableLiveData<String?>()
     val passwordChangeMessage: LiveData<String?> = _passwordChangeMessage
@@ -32,32 +28,7 @@ class ProfileViewModel(
     val userEmail: LiveData<String?> = _userEmail
 
     init {
-        loadPlants()
         _userEmail.value = getUserEmailUseCase.getUserEmail()
-    }
-
-    private fun loadPlants() {
-        viewModelScope.launch {
-            val result = getPlantsUseCase.getPlants()
-            result.onSuccess { plantList ->
-                _plants.value = plantList
-                Log.d("ProfileViewModel", "Plantas cargadas: $plantList")
-            }.onFailure { exception ->
-                Log.e("ProfileViewModel", "Error loading plants", exception)
-            }
-        }
-    }
-
-    fun onDeletePlantSelected(plantId: String) {
-        viewModelScope.launch {
-            val result = deletePlantUseCase.deletePlant(plantId)
-            result.onSuccess {
-                Log.d("ProfileViewModel", "Planta eliminada con éxito: $plantId")
-                loadPlants()
-            }.onFailure { exception ->
-                Log.e("ProfileViewModel", "Error al eliminar la planta", exception)
-            }
-        }
     }
 
     fun onChangePassword(newPassword: String) {
@@ -84,15 +55,13 @@ class ProfileViewModel(
 }
 
 class ProfileViewModelFactory(
-    private val deletePlantUseCase: DeletePlantUseCase,
-    private val getPlantsUseCase: GetPlantsUseCase,
     private val changePasswordUseCase: ChangePasswordUseCase,
     private val getUserEmailUseCase: GetUserEmailUseCase
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ProfileViewModel(deletePlantUseCase, getPlantsUseCase, changePasswordUseCase, getUserEmailUseCase) as T
+            return ProfileViewModel(changePasswordUseCase, getUserEmailUseCase) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

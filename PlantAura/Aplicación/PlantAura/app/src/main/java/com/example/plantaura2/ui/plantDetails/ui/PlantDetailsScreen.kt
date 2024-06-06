@@ -54,12 +54,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -258,10 +255,6 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         }
     }
 }
-
-
-
-
 
 @Composable
 fun AnimatedBorderContainer(viewModel: PlantDetailsViewModel) {
@@ -575,6 +568,9 @@ fun PlantTypeDetails(
                 isGraphVisible = showHumidityAmbienteGraph.value,
                 measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.humedadAmbiente ?: 0) }
             )
+            if (showHumidityAmbienteGraph.value) {
+                MeasurementGraph(measurementData.map { it.timestamp to it.humedadAmbiente }, "Humedad Ambiente")
+            }
         }
         if (lastHumiditySuelo != null) {
             ParameterStatusRow(
@@ -587,6 +583,9 @@ fun PlantTypeDetails(
                 isGraphVisible = showHumiditySueloGraph.value,
                 measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.humedadSuelo ?: 0) }
             )
+            if (showHumiditySueloGraph.value) {
+                MeasurementGraph(measurementData.map { it.timestamp to it.humedadSuelo }, "Humedad Suelo")
+            }
         }
         if (lastTemperature != null) {
             ParameterStatusRow(
@@ -599,6 +598,9 @@ fun PlantTypeDetails(
                 isGraphVisible = showTemperatureGraph.value,
                 measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.temperatura?.toInt() ?: 0) }
             )
+            if (showTemperatureGraph.value) {
+                MeasurementGraph(measurementData.map { it.timestamp to it.temperatura.toInt() }, "Temperatura")
+            }
         }
         if (lastLuminosidad != null) {
             ParameterStatusRow(
@@ -611,6 +613,9 @@ fun PlantTypeDetails(
                 isGraphVisible = showLuminosidadGraph.value,
                 measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.luminosidad?.toInt() ?: 0) }
             )
+            if (showLuminosidadGraph.value) {
+                MeasurementGraph(measurementData.map { it.timestamp to it.luminosidad.toInt() }, "Luminosidad")
+            }
         }
 
         // Datos adicionales para el sensor Pro
@@ -708,7 +713,6 @@ fun PlantTypeDetails(
         )
     }
 }
-
 
 @Composable
 fun ParameterStatusRow(
@@ -926,16 +930,7 @@ fun MeasurementSection(
             modifier = Modifier
                 .padding(16.dp)
         ) {
-            Text(
-                text = "Luminosidad: $lastLuminosidad luxes",
-                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            if (measurementData.isNotEmpty()) {
-                MeasurementGraph(measurementData.map { it.timestamp to it.luminosidad.toInt() }, "Luminosidad")
-            } else {
-                Text(text = "Cargando datos de luminosidad...")
-            }
+            Text(text = if (showGraph) "Ocultar Gráfica" else "Ver Gráfica")
         }
     }
     if (sensorType == "Sensor PlantAura Pro") {
@@ -1183,6 +1178,7 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp) // Ajustar la altura del contenedor
+            .padding(top = 16.dp) // Añadir margen superior
     ) {
         LineGraph(
             modifier = Modifier.fillMaxSize(),

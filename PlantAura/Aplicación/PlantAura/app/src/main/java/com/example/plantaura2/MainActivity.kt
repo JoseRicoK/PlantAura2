@@ -48,6 +48,7 @@ import com.example.plantaura2.ui.questionHub.ui.QuestionHubViewModel
 import com.example.plantaura2.ui.sensorConnection.ui.SensorConnectionViewModel
 import com.example.plantaura2.ui.sensorConnection.ui.SensorConnectionViewModelFactory
 import com.example.plantaura2.ui.settings.ui.SettingsViewModel
+import com.example.plantaura2.ui.settings.ui.SettingsViewModelFactory
 import com.example.plantaura2.ui.signup.ui.SignUpViewModel
 import com.example.plantaura2.ui.signup.ui.SignUpViewModelFactory
 import com.example.plantaura2.ui.theme.PlantAura2Theme
@@ -63,7 +64,6 @@ class MainActivity : ComponentActivity() {
         const val MY_CHANEL_ID = "myChannel"
     }
 
-
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString("currentSensorId", sensorConnectionViewModel.currentSensorId)
@@ -78,7 +78,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("MainActivity", "onCreate called")
-
         // Registro del ActivityResultLauncher para la cámara
         cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             Log.d("MainActivity", "ActivityResult: ${result.resultCode}")
@@ -141,9 +140,13 @@ class MainActivity : ComponentActivity() {
         val profileViewModel =
             ViewModelProvider(
                 this,
-                ProfileViewModelFactory(deletePlantUseCase, getPlantsUseCase, changePasswordUseCase, getUserEmailUseCase)
+                ProfileViewModelFactory(changePasswordUseCase, getUserEmailUseCase)
             )[ProfileViewModel::class.java]
-        val settingsViewModel: SettingsViewModel by viewModels()
+        val settingsViewModel =
+            ViewModelProvider(
+                this,
+                SettingsViewModelFactory(deletePlantUseCase, getPlantsUseCase)
+            )[SettingsViewModel::class.java]
 
         setContent {
             PlantAura2Theme {
