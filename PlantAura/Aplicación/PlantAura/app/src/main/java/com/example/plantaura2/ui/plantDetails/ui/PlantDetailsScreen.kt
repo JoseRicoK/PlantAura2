@@ -54,9 +54,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -255,6 +258,10 @@ fun PlantDetailsScreen(navController: NavController, plantName: String) {
         }
     }
 }
+
+
+
+
 
 @Composable
 fun AnimatedBorderContainer(viewModel: PlantDetailsViewModel) {
@@ -568,9 +575,6 @@ fun PlantTypeDetails(
                 isGraphVisible = showHumidityAmbienteGraph.value,
                 measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.humedadAmbiente ?: 0) }
             )
-            if (showHumidityAmbienteGraph.value) {
-                MeasurementGraph(measurementData.map { it.timestamp to it.humedadAmbiente }, "Humedad Ambiente")
-            }
         }
         if (lastHumiditySuelo != null) {
             ParameterStatusRow(
@@ -583,9 +587,6 @@ fun PlantTypeDetails(
                 isGraphVisible = showHumiditySueloGraph.value,
                 measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.humedadSuelo ?: 0) }
             )
-            if (showHumiditySueloGraph.value) {
-                MeasurementGraph(measurementData.map { it.timestamp to it.humedadSuelo }, "Humedad Suelo")
-            }
         }
         if (lastTemperature != null) {
             ParameterStatusRow(
@@ -598,9 +599,6 @@ fun PlantTypeDetails(
                 isGraphVisible = showTemperatureGraph.value,
                 measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.temperatura?.toInt() ?: 0) }
             )
-            if (showTemperatureGraph.value) {
-                MeasurementGraph(measurementData.map { it.timestamp to it.temperatura.toInt() }, "Temperatura")
-            }
         }
         if (lastLuminosidad != null) {
             ParameterStatusRow(
@@ -613,9 +611,6 @@ fun PlantTypeDetails(
                 isGraphVisible = showLuminosidadGraph.value,
                 measurementData = viewModel.measurementData.collectAsState().value.map { it.timestamp to (it.luminosidad?.toInt() ?: 0) }
             )
-            if (showLuminosidadGraph.value) {
-                MeasurementGraph(measurementData.map { it.timestamp to it.luminosidad.toInt() }, "Luminosidad")
-            }
         }
 
         // Datos adicionales para el sensor Pro
@@ -713,6 +708,7 @@ fun PlantTypeDetails(
         )
     }
 }
+
 
 @Composable
 fun ParameterStatusRow(
@@ -823,311 +819,6 @@ fun getIconForParameter(parameterName: String): ImageVector {
 }
 
 
-@Composable
-fun MeasurementSection(
-    measurementData: List<MeasurementData>,
-    lastHumidityAmbiente: Int?,
-    lastHumiditySuelo: Int?,
-    lastTemperature: Float?,
-    lastLuminosidad: Float?,
-    lastConductividad: Int?,
-    lastPh: Float?,
-    lastNitrogeno: Int?,
-    lastFosforo: Int?,
-    lastPotasio: Int?,
-    lastSalinidad: Int?,
-    lastTds: Int?,
-    sensorType: String
-) {
-    // Recuadro para humedad ambiente y gráfica
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Humedad Ambiente: $lastHumidityAmbiente%",
-                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            if (measurementData.isNotEmpty()) {
-                MeasurementGraph(measurementData.map { it.timestamp to it.humedadAmbiente }, "Humedad Ambiente")
-            } else {
-                Text(text = "Cargando datos de humedad ambiente...")
-            }
-        }
-    }
-    Spacer(modifier = Modifier.height(16.dp))
-    // Recuadro para humedad suelo y gráfica
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Humedad Suelo: $lastHumiditySuelo%",
-                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            if (measurementData.isNotEmpty()) {
-                MeasurementGraph(measurementData.map { it.timestamp to it.humedadSuelo }, "Humedad Suelo")
-            } else {
-                Text(text = "Cargando datos de humedad suelo...")
-            }
-        }
-    }
-    Spacer(modifier = Modifier.height(16.dp))
-    // Recuadro para temperatura y gráfica
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Temperatura: $lastTemperature°C",
-                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            if (measurementData.isNotEmpty()) {
-                MeasurementGraph(measurementData.map { it.timestamp to it.temperatura.toInt() }, "Temperatura")
-            } else {
-                Text(text = "Cargando datos de temperatura...")
-            }
-        }
-    }
-    Spacer(modifier = Modifier.height(16.dp))
-    // Recuadro para luminosidad y gráfica
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-        ) {
-            Text(text = if (showGraph) "Ocultar Gráfica" else "Ver Gráfica")
-        }
-    }
-    if (sensorType == "Sensor PlantAura Pro") {
-        // Datos adicionales para el sensor Pro
-        if (lastConductividad != null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 10.dp
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "Conductividad: $lastConductividad µS/cm",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    if (measurementData.isNotEmpty()) {
-                        MeasurementGraph(measurementData.map { it.timestamp to (it.conductividad ?: 0) }, "Conductividad")
-                    } else {
-                        Text(text = "Cargando datos de conductividad...")
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        if (lastPh != null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 10.dp
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "pH: $lastPh",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    if (measurementData.isNotEmpty()) {
-                        MeasurementGraph(measurementData.map { it.timestamp to (it.ph?.toInt() ?: 0) }, "pH")
-                    } else {
-                        Text(text = "Cargando datos de pH...")
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        if (lastNitrogeno != null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 10.dp
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "Nitrógeno: $lastNitrogeno mg/kg",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    if (measurementData.isNotEmpty()) {
-                        MeasurementGraph(measurementData.map { it.timestamp to (it.nitrogeno ?: 0) }, "Nitrógeno")
-                    } else {
-                        Text(text = "Cargando datos de nitrógeno...")
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        if (lastFosforo != null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 10.dp
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "Fósforo: $lastFosforo mg/kg",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    if (measurementData.isNotEmpty()) {
-                        MeasurementGraph(measurementData.map { it.timestamp to (it.fosforo ?: 0) }, "Fósforo")
-                    } else {
-                        Text(text = "Cargando datos de fósforo...")
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        if (lastPotasio != null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 10.dp
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "Potasio: $lastPotasio mg/kg",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    if (measurementData.isNotEmpty()) {
-                        MeasurementGraph(measurementData.map { it.timestamp to (it.potasio ?: 0) }, "Potasio")
-                    } else {
-                        Text(text = "Cargando datos de potasio...")
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        if (lastSalinidad != null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 10.dp
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "Salinidad: $lastSalinidad mg/L",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    if (measurementData.isNotEmpty()) {
-                        MeasurementGraph(measurementData.map { it.timestamp to (it.salinidad ?: 0) }, "Salinidad")
-                    } else {
-                        Text(text = "Cargando datos de salinidad...")
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        if (lastTds != null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 10.dp
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "TDS: $lastTds mg/L",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    if (measurementData.isNotEmpty()) {
-                        MeasurementGraph(measurementData.map { it.timestamp to (it.tds ?: 0) }, "TDS")
-                    } else {
-                        Text(text = "Cargando datos de TDS...")
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
-}
-
-
 
 @Composable
 fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
@@ -1178,7 +869,6 @@ fun MeasurementGraph(data: List<Pair<String, Int>>, title: String) {
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp) // Ajustar la altura del contenedor
-            .padding(top = 16.dp) // Añadir margen superior
     ) {
         LineGraph(
             modifier = Modifier.fillMaxSize(),
