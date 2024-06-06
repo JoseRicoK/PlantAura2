@@ -172,7 +172,6 @@ class SensorConnectionViewModel(application: Application) : AndroidViewModel(app
         suspend fun getData(): Response<Sensor>
     }
 
-    data class SensorData(val id: String, val sensor: String)
 
     private fun fetchMessageFromESP32(ipAddress: String) {
         viewModelScope.launch {

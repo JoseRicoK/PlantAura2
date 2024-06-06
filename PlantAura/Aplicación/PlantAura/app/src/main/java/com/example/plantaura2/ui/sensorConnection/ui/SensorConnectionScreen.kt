@@ -1,6 +1,7 @@
 package com.example.plantaura2.ui.sensorConnection.ui
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -72,7 +73,7 @@ fun SensorConnectionScreen(
                 }
             },
             onTakePhoto = {
-                // Llamar a la función para abrir la cámara
+                Log.d("SensorConnectionScreen", "Llamando a openCamera")
                 (context as MainActivity).openCamera()
             }
         )
@@ -231,7 +232,10 @@ fun SensorNameDialog(plantTypes: List<String>, onDismiss: () -> Unit, onSave: (S
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = onTakePhoto) {
+                Button(onClick = {
+                    Log.d("SensorNameDialog", "Botón de tomar foto presionado")
+                    onTakePhoto()
+                }) {
                     Text("Tomar Foto")
                 }
             }

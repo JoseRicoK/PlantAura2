@@ -64,19 +64,28 @@ class MainActivity : ComponentActivity() {
     }
 
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("currentSensorId", sensorConnectionViewModel.currentSensorId)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        sensorConnectionViewModel.currentSensorId = savedInstanceState.getString("currentSensorId")
+    }
+
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-
-        createNotificationChannel()
-
+        Log.d("MainActivity", "onCreate called")
 
         // Registro del ActivityResultLauncher para la cámara
         cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            Log.d("MainActivity", "ActivityResult: ${result.resultCode}")
             if (result.resultCode == RESULT_OK) {
                 val imageBitmap = result.data?.extras?.get("data") as? Bitmap
                 if (imageBitmap != null) {
+                    Log.d("MainActivity", "Imagen obtenida de la cámara")
                     val sensorId = sensorConnectionViewModel.currentSensorId // Obtener el ID del sensor descubierto
                     if (sensorId != null) {
                         sensorConnectionViewModel.saveImage(imageBitmap, sensorId)
@@ -90,8 +99,12 @@ class MainActivity : ComponentActivity() {
                 Log.e("MainActivity", "El resultado de la cámara no fue OK")
             }
         }
+        // El resto de tu código de configuración
 
-        // Registro del ActivityResultLauncher para permisos
+
+
+
+    // Registro del ActivityResultLauncher para permisos
         requestPermissionLauncher =
             registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
                 val granted = permissions.entries.all { it.value }
@@ -186,9 +199,12 @@ class MainActivity : ComponentActivity() {
 
 
     //JOSE LO CAMBIE A PUBLIC - PRIVATE DABA ERRORES Y NO  QUERIA MODIFICAR LAS OTRAS CLASS.
-    public fun openCamera() {
+    fun openCamera() {
+        Log.d("MainActivity", "Abriendo la cámara")
         val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        Log.d("MainActivity", "cameraIntent: $cameraIntent")
         cameraLauncher.launch(cameraIntent)
+        Log.d("MainActivity", "cameraLauncher: $cameraLauncher")
     }
 
     private fun createNotificationChannel() {
