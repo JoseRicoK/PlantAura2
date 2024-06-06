@@ -133,7 +133,7 @@ class PlantDetailsViewModel(
 
     init {
         fetchPlantDetails()
-        loadScaler()
+
     }
 
 
@@ -141,11 +141,14 @@ class PlantDetailsViewModel(
 
 
     // Prediccion de la salud de la planta
-    private fun loadScaler() {
+    private fun loadScaler(sensorType: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val assetManager = getApplication<Application>().assets
-                val inputStream = assetManager.open("scaler.json")
+                val inputStream = when (sensorType) {
+                    "Sensor PlantAura Pro" -> assetManager.open("scaler_pro.json")
+                    else -> assetManager.open("scaler.json")
+                }
                 val jsonString = inputStream.bufferedReader().use(BufferedReader::readText)
                 val jsonObject = JSONObject(jsonString)
 
@@ -157,12 +160,17 @@ class PlantDetailsViewModel(
                     jsonObject.getJSONArray("data_range_").toDoubleArray()
                 )
 
-                Log.d("PlantDetailsViewModel", "Scaler loaded successfully")
+                Log.d("PlantDetailsViewModel", "Scaler loaded successfully for $sensorType")
+                Log.d("PlantDetailsViewModel", "Scaler details: $scaler")
             } catch (e: Exception) {
                 Log.e("PlantDetailsViewModel", "Error loading scaler: ${e.message}", e)
             }
         }
     }
+
+
+
+
 
     private fun JSONArray.toDoubleArray(): DoubleArray {
         val array = DoubleArray(this.length())
@@ -175,7 +183,7 @@ class PlantDetailsViewModel(
     fun predictSalud() {
         viewModelScope.launch {
             try {
-                val datosRecientes = arrayOf(
+                val datosRecientesBasico = arrayOf(
                     floatArrayOf(30.0f, 70.0f, 25.0f, 200.0f),
                     floatArrayOf(29.0f, 58.0f, 24.5f, 195.0f),
                     floatArrayOf(28.0f, 65.0f, 24.0f, 190.0f),
@@ -183,8 +191,30 @@ class PlantDetailsViewModel(
                     floatArrayOf(26.0f, 50.0f, 23.0f, 180.0f)
                 )
 
+                val datosRecientesPro = arrayOf(
+                    floatArrayOf(149.15f, 39.18f, 39.97f, 30.18f, 87.73f, 100.55f, 298.70f, 163.94f, 23.39f, 5.78f, 93.55f, 26.40f),
+                    floatArrayOf(188.95f, 36.27f, 42.79f, 29.40f, 144.09f, 139.13f, 378.9f, 100.64f, 40.11f, 5.36f, 132.24f, 25.50f),
+                    floatArrayOf(1.00f, 32.00f, 30.00f, 27.00f, 1.00f, 85.00f, 30.00f, 160.00f, 20.00f, 4.50f, 3.00f, 20.00f),
+                    floatArrayOf(158.00f, 30.00f, 2.00f, 26.50f, 16.00f, 84.00f, 299.00f, 159.00f, 21.00f, 5.40f, 99.00f, 19.50f),
+                    floatArrayOf(1.00f, 28.00f, 25.00f, 2.00f, 155.00f, 83.00f, 298.00f, 158.00f, 19.00f, 5.30f, 98.00f, 19.00f)
+                )
+
+                val datosRecientes = if (sensorType.value == "Sensor PlantAura Pro") {
+                    datosRecientesPro
+                } else {
+                    datosRecientesBasico
+                }
+
+                Log.d("PlantDetailsViewModel", "Datos recientes: ${datosRecientes.contentDeepToString()}")
+
                 val scaledData = scaler?.transform(datosRecientes) ?: datosRecientes
-                val response = predictSaludOnCloud(scaledData)
+                Log.d("PlantDetailsViewModel", "Datos escalados: ${scaledData.contentDeepToString()}")
+
+                val response = if (sensorType.value == "Sensor PlantAura Pro") {
+                    predictSaludOnCloud(scaledData, "8380765698955149312")  // Pro endpoint ID
+                } else {
+                    predictSaludOnCloud(scaledData, "4046402901331935232")  // Basic endpoint ID
+                }
                 val predictedSalud = response?.getJSONArray("predictions")?.getJSONArray(0)?.getDouble(0)
                 predictedSalud?.let {
                     saludPredicha.postValue(it.toInt())
@@ -195,11 +225,12 @@ class PlantDetailsViewModel(
         }
     }
 
-    private suspend fun predictSaludOnCloud(scaledData: Array<FloatArray>): JSONObject? {
+
+
+    private suspend fun predictSaludOnCloud(scaledData: Array<FloatArray>, endpointID: String): JSONObject? {
         return withContext(Dispatchers.IO) {
             try {
                 val projectID = "48209340015"
-                val endpointID = "4046402901331935232"
                 val endpointUrl = "https://us-central1-aiplatform.googleapis.com/v1/projects/$projectID/locations/us-central1/endpoints/$endpointID:predict"
 
                 val instances = JSONArray().apply {
@@ -236,6 +267,7 @@ class PlantDetailsViewModel(
             }
         }
     }
+
 
 
 
@@ -324,6 +356,8 @@ class PlantDetailsViewModel(
                     fetchPlantTypeRanges(plant.plantType)
                     fetchRecommendations(plant.id)
                     fetchReviveState(plant.id)
+
+                    loadScaler(plant.sensorType)
                 } else {
                     Log.d("PlantDetailsViewModel", "No plant found with name: $plantNameInput")
                 }
@@ -461,10 +495,18 @@ data class MinMaxScaler(
     fun transform(data: Array<FloatArray>): Array<FloatArray> {
         return data.map { row ->
             row.mapIndexed { index, value ->
-                ((value - dataMin[index]) / dataRange[index]).toFloat()
+                if (index < dataMin.size) {
+                    Log.d("MinMaxScaler", "Transforming value: $value with dataMin: ${dataMin[index]} and dataRange: ${dataRange[index]}")
+                    ((value - dataMin[index]) / dataRange[index]).toFloat()
+                } else {
+                    Log.e("MinMaxScaler", "Index $index out of bounds for dataMin size ${dataMin.size}")
+                    value // Devuelve el valor sin escalar si el índice está fuera de los límites
+                }
             }.toFloatArray()
         }.toTypedArray()
     }
 }
+
+
 
 
